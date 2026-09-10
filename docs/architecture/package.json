@@ -1,0 +1,12 @@
+{
+  "name": "elysium",
+  "version": "1.0.0",
+  "description": "Elysium - Sleeping Empire Roguelite",
+  "scripts": {
+    "build": "quartz build",
+    "start": "quartz build --serve"
+  },
+  "dependencies": {
+    "quartz": "latest"
+  }
+}

@@ -1,0 +1,11 @@
+// Intended function: topologically order mods, reject namespace/version conflicts and deliver stable-seeded event envelopes in deterministic order.
+#include "mod/ModRuntime.hpp"
+#include "core/Determinism.hpp"
+#include <algorithm>
+#include <set>
+#include <unordered_set>
+namespace elysium{
+ModLoadPlan planModLoad(std::vector<ModManifest>ms){ModLoadPlan p;std::sort(ms.begin(),ms.end(),[](auto&a,auto&b){return a.modId<b.modId;});std::unordered_map<std::string,std::size_t>idx;std::unordered_set<std::string>ns;for(std::size_t i=0;i<ms.size();++i){if(ms[i].modId.empty()||idx.contains(ms[i].modId)){p.errors.push_back("duplicate/empty mod id: "+ms[i].modId);continue;}idx[ms[i].modId]=i;for(auto&n:ms[i].contentNamespaces)if(!ns.insert(n).second)p.errors.push_back("content namespace collision: "+n);}std::vector<int>indeg(ms.size());std::vector<std::vector<std::size_t>>adj(ms.size());for(std::size_t i=0;i<ms.size();++i)for(auto&d:ms[i].dependencies){auto it=idx.find(d.modId);if(it==idx.end()){if(!d.optional)p.errors.push_back(ms[i].modId+" missing dependency "+d.modId);continue;}auto&target=ms[it->second];if(target.version<d.minVersion||target.version>d.maxVersion){if(!d.optional)p.errors.push_back(ms[i].modId+" incompatible dependency "+d.modId);continue;}adj[it->second].push_back(i);++indeg[i];}std::set<std::string>ready;for(std::size_t i=0;i<ms.size();++i)if(!indeg[i])ready.insert(ms[i].modId);while(!ready.empty()){auto id=*ready.begin();ready.erase(ready.begin());auto i=idx[id];p.orderedModIds.push_back(id);p.combinedFingerprint=mix64(p.combinedFingerprint^mix64(ms[i].compatibilityFingerprint^ms[i].version));for(auto n:adj[i])if(--indeg[n]==0)ready.insert(ms[n].modId);}if(p.orderedModIds.size()!=ms.size())p.errors.push_back("cyclic mod dependency graph");p.valid=p.errors.empty();return p;}
+void ModEventQueue::publish(ModEventEnvelope e){events_.push_back(std::move(e));}
+std::vector<ModEventEnvelope> ModEventQueue::drainDeterministic(){std::sort(events_.begin(),events_.end(),[](auto&a,auto&b){if(a.hook!=b.hook)return a.hook<b.hook;if(a.subjectId!=b.subjectId)return a.subjectId<b.subjectId;if(a.locationId!=b.locationId)return a.locationId<b.locationId;return a.eventSeed<b.eventSeed;});auto o=std::move(events_);events_.clear();return o;}
+}

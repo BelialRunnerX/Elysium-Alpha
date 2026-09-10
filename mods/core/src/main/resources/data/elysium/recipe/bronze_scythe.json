@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "  S",
+    "  S"
+  ],
+  "key": {
+    "M": "c:ingots/bronze",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "elysium:bronze_scythe",
+    "count": 1
+  }
+}

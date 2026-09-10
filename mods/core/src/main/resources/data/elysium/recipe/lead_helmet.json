@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "M M"
+  ],
+  "key": {
+    "M": "c:ingots/lead"
+  },
+  "result": {
+    "id": "elysium:lead_helmet",
+    "count": 1
+  }
+}

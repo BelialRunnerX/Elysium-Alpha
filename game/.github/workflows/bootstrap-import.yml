@@ -1,0 +1,67 @@
+name: Bootstrap Production Import
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.bootstrap/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bootstrap commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify bootstrap payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '39513de33512070237eeee88d47917b2b95747f9fb01d0d1e1432bf8e14fcac7  .bootstrap/production-source.tar.xz' | sha256sum --check --strict
+
+      - name: Reconstruct production tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/elysium-production
+          tar -xJf .bootstrap/production-source.tar.xz -C /tmp/elysium-production
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/workflows/' \
+            --exclude='.bootstrap/' \
+            /tmp/elysium-production/ ./
+          if [ -f .bootstrap_expand/expand.py ]; then
+            python3 .bootstrap_expand/expand.py
+          fi
+
+      - name: Verify recovered C++ inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/generate_production_sources.py
+          git diff --exit-code -- cmake/ProductionSources.cmake
+          runtime=$(find src -name '*.cpp' -type f | wc -l)
+          tests=$(find tests -name '*.cpp' -type f | wc -l)
+          tools=$(find tools -name '*.cpp' -type f | wc -l)
+          total=$((runtime + tests + tools))
+          echo "runtime=$runtime tests=$tests tools=$tools total=$total"
+          test "$runtime" -eq 1588
+          test "$tests" -eq 22
+          test "$tools" -eq 2
+          test "$total" -eq 1612
+
+      - name: Commit production source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git reset -- .github/workflows .bootstrap
+          git commit -m 'Import Elysium production-ready 1612-file build'
+          git push origin HEAD:main

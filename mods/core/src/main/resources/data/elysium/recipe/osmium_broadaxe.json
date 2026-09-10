@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "MSM",
+    " S "
+  ],
+  "key": {
+    "M": "c:ingots/osmium",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "elysium:osmium_broadaxe",
+    "count": 1
+  }
+}

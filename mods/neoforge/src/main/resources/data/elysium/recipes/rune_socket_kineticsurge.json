@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "elysium:elysium_helmet" },
+    { "item": "elysium:kineticsurge_rune" }
+  ],
+  "result": { "item": "elysium:elysium_helmet" }
+}

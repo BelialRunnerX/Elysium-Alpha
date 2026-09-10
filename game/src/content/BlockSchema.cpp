@@ -1,0 +1,10 @@
+#include "content/BlockSchema.hpp"
+#include <algorithm>
+#include <cmath>
+namespace elysium::content {namespace{double val(double v,double fallback){if(v<0)return fallback;if(!std::isfinite(v))return 4294967295.0;return std::clamp(v,0.0,4294967295.0);} }
+bool BlockSchemaRegistry::addMaterial(ContentId id,MaterialDefaults d){if(frozen_||!id||materials_.contains(id))return false;d.hardness=val(d.hardness,0);d.blastResistance=val(d.blastResistance,0);d.thermalConductivity=val(d.thermalConductivity,0);d.corrosionResistance=val(d.corrosionResistance,0);d.friction=val(d.friction,0);d.permeability=val(d.permeability,0);materials_[id]=d;return true;}
+bool BlockSchemaRegistry::add(BlockDef d){if(frozen_||!d.id||blocks_.contains(d.id))return false;blocks_[d.id]=d;return true;}
+std::optional<ResolvedBlock> BlockSchemaRegistry::resolve(ContentId id)const{auto it=blocks_.find(id);if(it==blocks_.end())return std::nullopt;auto mi=materials_.find(it->second.materialClass);if(mi==materials_.end())return std::nullopt;const auto&b=it->second;const auto&m=mi->second;return ResolvedBlock{b.id,b.family,b.materialClass,b.dropTable,b.renderMaterial,b.stateSchema,val(b.hardness,m.hardness),val(b.blastResistance,m.blastResistance),val(b.thermalConductivity,m.thermalConductivity),val(b.corrosionResistance,m.corrosionResistance),val(b.friction,m.friction),val(b.permeability,m.permeability),b.harvestTier,b.support,b.sealOverride?b.seal:m.seal,b.microRefinable};}
+std::vector<BlockValidation> BlockSchemaRegistry::validate()const{std::vector<BlockValidation>o;for(auto&[id,b]:blocks_){if(!materials_.contains(b.materialClass))o.push_back({id,"missing_material"});if(!b.dropTable)o.push_back({id,"missing_drop_table"});if(!b.renderMaterial)o.push_back({id,"missing_render_material"});if(b.microRefinable&&b.stateSchema!=0)o.push_back({id,"micro_refinable_with_state_schema_requires_explicit_adapter"});if(b.permeability>1.0)o.push_back({id,"invalid_permeability_override"});}return o;}
+bool BlockSchemaRegistry::freeze(){if(!validate().empty())return false;frozen_=true;return true;}
+}

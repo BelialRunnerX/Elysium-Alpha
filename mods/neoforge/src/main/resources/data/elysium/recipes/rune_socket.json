@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "elysium:elysium_helmet"
+    },
+    {
+      "item": "elysium:voidward_rune"
+    }
+  ],
+  "result": {
+    "item": "elysium:elysium_helmet"
+  }
+}

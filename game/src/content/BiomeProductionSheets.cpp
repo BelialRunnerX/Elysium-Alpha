@@ -1,0 +1,9 @@
+#include "BiomeProductionSheets.hpp"
+#include <cmath>
+namespace elysium::content {
+bool BiomeProductionRegistry::add(BiomeProductionSheet s,std::string& r){ if(frozen_){r="registry frozen";return false;} if(!s.biome||!s.planetClass||s.schemaVersion==0){r="invalid identity/version";return false;} if(s.surfaceStack.empty()){r="surface stack required";return false;} if(s.climateTarget.empty()){r="climate target required";return false;} for(float v:s.climateTarget) if(!std::isfinite(v)){r="non-finite climate target";return false;} if(!rows_.emplace(s.biome,std::move(s)).second){r="duplicate biome";return false;} return true; }
+bool BiomeProductionRegistry::validateReferences(const std::unordered_set<ContentId>& known,std::string& r) const { for(auto& [id,s]:rows_){ for(auto ref:{s.planetClass,s.terrainModifier,s.floraSet,s.faunaModifier,s.weatherTable,s.resourceModifier,s.poiModifier,s.detailProfile,s.constructionPressure}) if(ref && !known.count(ref)){r="unresolved reference";return false;} for(auto ref:s.surfaceStack) if(!known.count(ref)){r="unresolved surface";return false;} } return true; }
+bool BiomeProductionRegistry::freeze(std::string& r){ if(frozen_){r="already frozen";return false;} frozen_=true; return true; }
+std::optional<BiomeProjection> BiomeProductionRegistry::project(ContentId id,bool discovered) const { auto it=rows_.find(id); if(it==rows_.end()) return std::nullopt; BiomeProjection p{id,it->second.schemaVersion,discovered}; if(discovered){p.anomalousNonClaimable=it->second.anomalousNonClaimable;p.operationalTags=it->second.operationalTags;} return p; }
+std::vector<ContentId> BiomeProductionRegistry::orderedIds() const { std::vector<ContentId> v; for(auto& [id,_]:rows_)v.push_back(id); std::sort(v.begin(),v.end()); return v; }
+}

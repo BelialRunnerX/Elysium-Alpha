@@ -1,0 +1,6 @@
+// Intended function: rotate/expand blueprint cells into stable placement commands so construction owners can validate and commit them atomically.
+#include "world/BaseBlueprints.hpp"
+#include "core/Determinism.hpp"
+#include <algorithm>
+#include <unordered_set>
+namespace elysium{bool validateBlueprint(const BaseBlueprint&b,std::size_t mv,std::size_t mo){if(!b.blueprintId||b.voxels.size()>mv||b.objects.size()>mo)return false;std::unordered_set<std::uint64_t>seen;for(auto&o:b.objects)if(!o.localStableKey||!seen.insert(o.localStableKey).second)return false;return true;}std::vector<BlueprintPlacementIntent>expandBlueprint(const BaseBlueprint&b,std::uint64_t a,std::uint8_t rot,std::uint64_t seed){std::vector<BlueprintPlacementIntent>o;if(!validateBlueprint(b))return o;auto tr=[&](int x,int z){for(int i=0;i<(rot&3);++i){int n=-z;z=x;x=n;}return std::pair<int,int>{x,z};};auto batch=mix64(seed^b.blueprintId^a);for(auto&v:b.voxels){auto[x,z]=tr(v.x,v.z);o.push_back({batch,b.blueprintId,a,std::int16_t(x),v.y,std::int16_t(z),v.blockId,0,mix64(batch^o.size())});}for(auto&v:b.objects){auto[x,z]=tr(v.x,v.z);o.push_back({batch,b.blueprintId,a,std::int16_t(x),v.y,std::int16_t(z),0,v.objectType,mix64(batch^v.localStableKey)});}std::sort(o.begin(),o.end(),[](auto&a,auto&b){return a.stableKey<b.stableKey;});return o;}}

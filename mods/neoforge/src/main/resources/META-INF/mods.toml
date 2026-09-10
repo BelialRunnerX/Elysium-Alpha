@@ -1,0 +1,10 @@
+modLoader="javafml"
+loaderVersion="[52,)"
+license="MIT"
+
+[[mods]]
+modId="elysium"
+version="${file.jarVersion}"
+displayName="Elysium"
+authors="BelialRunnerX"
+description="A mashup of Apotheosis, Reforged, and Silent Gear with deep Elysium armor, weapon, and psionic systems."

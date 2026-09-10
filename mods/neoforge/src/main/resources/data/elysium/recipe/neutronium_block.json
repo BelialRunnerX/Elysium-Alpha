@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": "elysium:neutronium_ingot"
+  },
+  "result": {
+    "id": "elysium:neutronium_block",
+    "count": 1
+  }
+}

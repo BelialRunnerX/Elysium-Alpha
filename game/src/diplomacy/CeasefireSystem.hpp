@@ -1,0 +1,64 @@
+// Intended function: Track bounded ceasefires, violations, renewal windows, and conversion into durable peace.
+#pragma once
+
+#include <cstdint>
+#include <vector>
+
+namespace elysium::diplomacy {
+
+struct CeasefireSystemCommand {
+    std::uint64_t subjectId{};
+    std::uint64_t ownerId{};
+    std::uint64_t targetId{};
+    double amount{};
+    double rate{};
+    std::uint64_t tick{};
+    std::uint32_t mode{};
+    std::uint32_t flags{};
+};
+
+struct CeasefireSystemState {
+    std::uint64_t revision{};
+    std::uint64_t subjectId{};
+    std::uint64_t ownerId{};
+    std::uint64_t targetId{};
+    double amount{};
+    double accumulated{};
+    double pressure{};
+    std::uint64_t updatedTick{};
+    std::uint32_t mode{};
+    std::uint32_t status{};
+    bool active{false};
+};
+
+struct CeasefireSystemEvent {
+    std::uint64_t eventId{};
+    std::uint64_t subjectId{};
+    std::uint64_t targetId{};
+    double magnitude{};
+    std::uint64_t tick{};
+    std::uint32_t kind{};
+};
+
+class CeasefireSystemService {
+public:
+    bool apply(const CeasefireSystemCommand& command);
+    bool erase(std::uint64_t subjectId);
+    void advance(std::uint64_t tick, double delta);
+    [[nodiscard]] const CeasefireSystemState* find(std::uint64_t subjectId) const;
+    [[nodiscard]] std::vector<CeasefireSystemState> ordered() const;
+    std::vector<CeasefireSystemEvent> drainEvents();
+    void clear();
+
+private:
+    CeasefireSystemState* findMutable(std::uint64_t subjectId);
+    void emit(std::uint64_t subjectId, std::uint64_t targetId, double magnitude,
+              std::uint64_t tick, std::uint32_t kind);
+
+    std::uint64_t revision_{1};
+    std::uint64_t nextEventId_{1};
+    std::vector<CeasefireSystemState> states_;
+    std::vector<CeasefireSystemEvent> events_;
+};
+
+} // namespace elysium::diplomacy

@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "elysium:dimensional_boots" },
+    { "item": "elysium:dimensionalshift_rune" }
+  ],
+  "result": { "item": "elysium:dimensional_boots" }
+}

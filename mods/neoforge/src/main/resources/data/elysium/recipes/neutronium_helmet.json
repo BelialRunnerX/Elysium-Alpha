@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "# #"
+  ],
+  "key": {
+    "#": { "item": "elysium:neutronium_ingot" }
+  },
+  "result": { "item": "elysium:neutronium_helmet" }
+}

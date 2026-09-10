@@ -1,0 +1,5 @@
+// Intended function: resolve the best matching biome deterministically from continuous shared planet fields rather than cube-face-local lookup tables.
+#include "content/BiomeCatalogue.hpp"
+#include <algorithm>
+#include <limits>
+namespace elysium{bool BiomeCatalogue::add(BiomeDefinition d){if(!d.biomeId||find(d.biomeId))return false;defs_.push_back(std::move(d));std::sort(defs_.begin(),defs_.end(),[](auto&a,auto&b){return a.biomeId<b.biomeId;});return true;}const BiomeDefinition*BiomeCatalogue::find(std::uint32_t id)const{auto i=std::find_if(defs_.begin(),defs_.end(),[&](auto&d){return d.biomeId==id;});return i==defs_.end()?nullptr:&*i;}const BiomeDefinition*BiomeCatalogue::select(float t,float m,float e)const{const BiomeDefinition*best=nullptr;float score=std::numeric_limits<float>::max();for(auto&b:defs_){float dt=t<b.minTemp?b.minTemp-t:(t>b.maxTemp?t-b.maxTemp:0);float dm=m<b.minMoisture?b.minMoisture-m:(m>b.maxMoisture?m-b.maxMoisture:0);float de=e<b.minElevation?b.minElevation-e:(e>b.maxElevation?e-b.maxElevation:0);float s=dt*dt+dm*dm+de*de;if(s<score){score=s;best=&b;}}return best;}}
