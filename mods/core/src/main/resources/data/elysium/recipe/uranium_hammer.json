@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "MSM",
+    " S "
+  ],
+  "key": {
+    "M": "c:ingots/uranium",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "elysium:uranium_hammer",
+    "count": 1
+  }
+}

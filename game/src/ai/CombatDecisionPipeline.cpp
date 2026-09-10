@@ -1,0 +1,4 @@
+#include "ai/CombatDecisionPipeline.hpp"
+#include "core/Saturating.hpp"
+#include <algorithm>
+namespace elysium::ai {std::vector<CombatDecision>CombatDecisionPipeline::rank(std::span<const CombatSense>cs)const{std::vector<CombatDecision>o;for(const auto&c:cs){if(!c.actorId||!c.targetId||!c.actionId||!c.reachable)continue;double score=safe::nonNegative(c.threat)*2+safe::nonNegative(c.roleFit)+safe::nonNegative(c.resourceReadiness)+safe::finiteClamp(c.cover,0.0,1.0)-safe::nonNegative(c.pathCost)*.1-safe::nonNegative(c.distance)*.01+(1-safe::finiteClamp(c.healthFraction,0.0,1.0))*.25;o.push_back({c.actorId,c.targetId,c.actionId,safe::finiteClamp(score,-safe::PublishedScalarCeiling,safe::PublishedScalarCeiling)});}std::stable_sort(o.begin(),o.end(),[](auto&a,auto&b){if(a.score!=b.score)return a.score>b.score;if(a.actorId!=b.actorId)return a.actorId<b.actorId;if(a.targetId!=b.targetId)return a.targetId<b.targetId;return a.actionId<b.actionId;});return o;}}

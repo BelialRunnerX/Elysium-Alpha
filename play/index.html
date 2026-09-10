@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ELYSIUM — Open World</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="c"></canvas>
+
+    <section id="title" class="screen active" aria-label="Title">
+      <div class="title-atmosphere" aria-hidden="true"></div>
+      <div class="title-core">
+        <p class="eyebrow">THE SLEEPING EMPIRE</p>
+        <h1 class="brand">ELYSIUM</h1>
+        <p class="tagline">Ceramic white. Solar-gold. Cyan pulse. Survive the filed claim.</p>
+        <div class="cta-row">
+          <button type="button" id="btn-new" class="cta primary" onclick="window.__elysiumNew?.()">Descend</button>
+          <button type="button" id="btn-continue" class="cta ghost" onclick="window.__elysiumContinue?.()">Continue</button>
+        </div>
+      </div>
+      <p class="title-foot">WASD · mouse · mine · craft · claim · hero assets on-site</p>
+    </section>
+
+    <div id="hud" class="hud hidden" aria-live="polite">
+      <header class="hud-top">
+        <div class="brand-mark">ELYSIUM</div>
+        <div id="planet-label" class="planet-label">TEMPERATE // FRONTIER PLAINS</div>
+      </header>
+      <div class="crosshair" aria-hidden="true"></div>
+      <aside class="vitals">
+        <div class="bar"><span>VIT</span><i id="bar-vit"></i></div>
+        <div class="bar"><span>O2</span><i id="bar-o2"></i></div>
+        <div class="bar"><span>ENG</span><i id="bar-eng"></i></div>
+        <div class="bar"><span>HNG</span><i id="bar-hng"></i></div>
+      </aside>
+      <aside class="intel">
+        <div>SUSPICION <strong id="suspicion">000.0</strong></div>
+        <div id="claim">CLAIM: UNFILED</div>
+        <div id="time-label">DAWN</div>
+        <div id="tool-label">TOOL Improvised</div>
+      </aside>
+      <footer class="hotbar" id="hotbar"></footer>
+      <div id="toast" class="toast"></div>
+      <div id="interact" class="interact"></div>
+    </div>
+
+    <section id="pause" class="screen menu hidden">
+      <div class="panel">
+        <h2>SYSTEM FILE</h2>
+        <button type="button" id="btn-resume" class="cta primary">Resume</button>
+        <button type="button" id="btn-travel" class="cta ghost">Ship Navigation</button>
+        <button type="button" id="btn-map" class="cta ghost">Local Chart</button>
+        <button type="button" id="btn-title" class="cta ghost">Return to Title</button>
+      </div>
+    </section>
+
+    <section id="travel" class="screen menu hidden">
+      <div class="panel wide">
+        <h2>SHIP NAVIGATION</h2>
+        <div id="planet-list" class="planet-list"></div>
+        <button type="button" id="btn-travel-close" class="cta ghost">Close</button>
+      </div>
+    </section>
+
+    <section id="map" class="screen menu hidden">
+      <div class="panel wide">
+        <h2>LOCAL CHART</h2>
+        <div id="map-body" class="map-body"></div>
+        <button type="button" id="btn-map-close" class="cta ghost">Close</button>
+      </div>
+    </section>
+
+    <section id="craft" class="screen menu hidden">
+      <div class="panel wide">
+        <h2>FIELD FABRICATION</h2>
+        <div id="craft-list" class="planet-list"></div>
+        <button type="button" id="btn-craft-close" class="cta ghost">Close</button>
+      </div>
+    </section>
+
+    <div id="loading" class="loading hidden"><span>MATERIALIZING SURFACE…</span></div>
+  </div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>

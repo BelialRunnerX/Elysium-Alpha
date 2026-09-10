@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "elysium:neutronium_chestplate" },
+    { "item": "elysium:neutronium_chestplate" }
+  ],
+  "result": { "item": "elysium:neutronium_chestplate" }
+}

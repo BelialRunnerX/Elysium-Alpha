@@ -1,0 +1,8 @@
+#include "render/DetailClusterRuntime.hpp"
+#include <algorithm>
+#include <cmath>
+namespace elysium::detail { namespace { std::uint64_t mix(std::uint64_t x){ x^=x>>30;x*=0xbf58476d1ce4e5b9ULL;x^=x>>27;x*=0x94d049bb133111ebULL;return x^(x>>31); } }
+std::vector<Instance> generateCluster(ClusterSeed s,std::uint32_t n){ std::vector<Instance> out; out.reserve(n); auto base=mix(s.universeSeed^s.worldId^s.spatialKey^s.content); for(std::uint32_t i=0;i<n;++i){auto id=mix(base^i); out.push_back({id,0.25f+float(id&1023)/1023.0f,32.0f+float((id>>10)&127),12u+std::uint32_t((id>>17)&31)});} return out; }
+std::vector<Instance> thinCluster(const std::vector<Instance>& src,Budget b){ auto v=src; double density=std::isfinite(b.density)?std::clamp(b.density,0.0,1.0):0.0; auto keep=std::uint64_t(double(v.size())*density); std::sort(v.begin(),v.end(),[](auto&a,auto&b){if(a.importance!=b.importance)return a.importance>b.importance;return a.stableId<b.stableId;}); std::vector<Instance> out; std::uint64_t tris=0; for(auto&i:v){ if(out.size()>=b.maxInstances||out.size()>=keep)break; if(tris+i.triangleCost>b.maxTriangles)continue; tris+=i.triangleCost;out.push_back(i);} return out; }
+std::optional<PromotionCommand> PromotionLedger::promote(ClusterSeed s,StableId id,Interaction a,std::uint64_t tx){ if(id==0||tx==0||transactions_.contains(tx)||ids_.contains(id)) return std::nullopt; transactions_.insert(tx);ids_.insert(id); DeltaKind k=DeltaKind::Tombstone; if(a==Interaction::Harvest)k=DeltaKind::Harvested; else if(a==Interaction::Burn)k=DeltaKind::Scorched; else if(a==Interaction::BuildOver)k=DeltaKind::Replaced; return PromotionCommand{id,s.worldId,s.spatialKey,k,tx}; }
+bool PromotionLedger::promoted(StableId id) const {return ids_.contains(id);} }

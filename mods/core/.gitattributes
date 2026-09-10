@@ -1,0 +1,11 @@
+# Disable autocrlf on generated files, they always generate with LF
+# Add any extra files or paths here to make git stop saying they
+# are changed when only line endings change.
+src/generated/**/.cache/* text eol=lf
+src/generated/**/*.json text eol=lf
+
+# gradlew is executed by /bin/sh on the CI runner. If it is committed from a
+# Windows checkout with autocrlf on, the CRLF line endings make the shebang
+# unparseable and every build fails with "bad interpreter". Pin it to LF.
+gradlew text eol=lf
+*.sh text eol=lf

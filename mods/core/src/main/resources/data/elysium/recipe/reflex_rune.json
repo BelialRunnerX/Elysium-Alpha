@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " v ",
+    "vcv",
+    " v "
+  ],
+  "key": {
+    "v": "elysium:voidglass_ingot",
+    "c": "minecraft:rabbit_foot"
+  },
+  "result": {
+    "id": "elysium:reflex_rune",
+    "count": 1
+  }
+}

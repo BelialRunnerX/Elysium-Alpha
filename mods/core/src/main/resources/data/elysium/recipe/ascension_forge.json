@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "aaa",
+    "i#i",
+    "iii"
+  ],
+  "key": {
+    "a": "elysium:aetherium_ingot",
+    "#": "elysium:neutronium_ingot",
+    "i": "minecraft:obsidian"
+  },
+  "result": {
+    "id": "elysium:ascension_forge",
+    "count": 1
+  }
+}

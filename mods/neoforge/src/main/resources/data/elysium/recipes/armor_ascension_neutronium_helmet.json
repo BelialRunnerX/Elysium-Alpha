@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "elysium:neutronium_helmet"},
+    {"item": "elysium:neutronium_helmet"}
+  ],
+  "result": {"item": "elysium:neutronium_helmet"}
+}

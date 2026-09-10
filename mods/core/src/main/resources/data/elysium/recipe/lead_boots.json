@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "M M",
+    "M M"
+  ],
+  "key": {
+    "M": "c:ingots/lead"
+  },
+  "result": {
+    "id": "elysium:lead_boots",
+    "count": 1
+  }
+}

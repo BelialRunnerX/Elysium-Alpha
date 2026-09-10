@@ -1,0 +1,18 @@
+// Intended function: Track charge, heat, beam/pulse modes, efficiency, damage, and overheat state.
+#pragma once
+#include <cstdint>
+#include <vector>
+namespace elysium::combatx {
+struct EnergyWeaponSystemRequest { std::uint64_t id{}, owner{}, target{}, tick{}; double value{}, rate{}; std::uint32_t kind{}, flags{}; };
+struct EnergyWeaponSystemRecord { std::uint64_t revision{}, id{}, owner{}, target{}, tick{}; double value{}, total{}, pressure{}; std::uint32_t kind{}, flags{}; bool active{false}; };
+struct EnergyWeaponSystemNotice { std::uint64_t sequence{}, id{}, target{}, tick{}; double value{}; std::uint32_t kind{}; };
+class EnergyWeaponSystemSystem {
+public:
+ bool submit(const EnergyWeaponSystemRequest&); bool remove(std::uint64_t); void step(std::uint64_t,double);
+ [[nodiscard]] const EnergyWeaponSystemRecord* find(std::uint64_t) const; [[nodiscard]] std::vector<EnergyWeaponSystemRecord> snapshot() const;
+ std::vector<EnergyWeaponSystemNotice> drainNotices(); void clear();
+private:
+ EnergyWeaponSystemRecord* mutableFind(std::uint64_t); void notice(const EnergyWeaponSystemRecord&,double,std::uint32_t);
+ std::uint64_t revision_{1}, sequence_{1}; std::vector<EnergyWeaponSystemRecord> records_; std::vector<EnergyWeaponSystemNotice> notices_;
+};
+}

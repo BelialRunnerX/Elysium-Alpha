@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "vv ",
+    "vr ",
+    " n "
+  ],
+  "key": {
+    "v": "elysium:voidglass_ingot",
+    "r": "elysium:kineticsurge_rune",
+    "n": "elysium:neutronium_ingot"
+  },
+  "result": {
+    "id": "elysium:kinetic_maul",
+    "count": 1
+  }
+}

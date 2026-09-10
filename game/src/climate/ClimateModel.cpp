@@ -1,0 +1,8 @@
+// Intended function: Sample shared 3D planetary climate fields for temperature, humidity, continentalness, wind, storm energy, and season.
+#include "ClimateModel.hpp"
+namespace elysium::climate {
+std::uint64_t ClimateSampleStore::idOf(const ClimateSample& v) noexcept { return static_cast<std::uint64_t>(v.sampleId); }
+bool ClimateSampleStore::put(ClimateSample v) { auto id=idOf(v); if(!id)return false; auto it=std::lower_bound(values_.begin(),values_.end(),id,[](const ClimateSample& a,std::uint64_t b){return idOf(a)<b;}); if(it!=values_.end()&&idOf(*it)==id){*it=v;return true;} values_.insert(it,v); return true; }
+bool ClimateSampleStore::erase(std::uint64_t id) { auto it=std::lower_bound(values_.begin(),values_.end(),id,[](const ClimateSample& a,std::uint64_t b){return idOf(a)<b;}); if(it==values_.end()||idOf(*it)!=id)return false; values_.erase(it); return true; }
+const ClimateSample* ClimateSampleStore::get(std::uint64_t id) const { auto it=std::lower_bound(values_.begin(),values_.end(),id,[](const ClimateSample& a,std::uint64_t b){return idOf(a)<b;}); return it!=values_.end()&&idOf(*it)==id?&*it:nullptr; }
+} // namespace elysium::climate

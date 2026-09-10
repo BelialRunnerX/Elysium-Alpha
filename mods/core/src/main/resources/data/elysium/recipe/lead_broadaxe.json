@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "MSM",
+    " S "
+  ],
+  "key": {
+    "M": "c:ingots/lead",
+    "S": "minecraft:stick"
+  },
+  "result": {
+    "id": "elysium:lead_broadaxe",
+    "count": 1
+  }
+}

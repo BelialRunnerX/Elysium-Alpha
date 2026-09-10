@@ -1,0 +1,2 @@
+#include "SiteLifecycleRuntime.hpp"
+namespace elysium::fortress {bool SiteLifecycleRuntime::add(SiteLifecycle s,std::string&w){if(!s.id||!s.baselineKit){w="invalid site";return false;}return rows_.emplace(s.id,s).second;}bool SiteLifecycleRuntime::transition(StableId id,SiteState s,std::string&w){auto i=rows_.find(id);if(i==rows_.end()){w="unknown site";return false;}i->second.state=s;++i->second.historyRevision;return true;}std::optional<SiteLifecycle>SiteLifecycleRuntime::get(StableId id)const{auto i=rows_.find(id);if(i==rows_.end())return std::nullopt;return i->second;}}
