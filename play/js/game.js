@@ -488,7 +488,7 @@ function spawnPlayer(reset = false) {
     pos = { x: 2, y, z: 2 };
     state.positions[state.planetIndex] = pos;
   }
-  controls.getObject().position.set(pos.x, pos.y, pos.z);
+  controls.object.position.set(pos.x, pos.y, pos.z);
   velocity.set(0, 0, 0);
 }
 
@@ -519,7 +519,7 @@ function setMode(mode) {
 }
 
 function persist() {
-  const pos = controls.getObject().position;
+  const pos = controls.object.position;
   state.positions[state.planetIndex] = { x: pos.x, y: pos.y, z: pos.z };
   localStorage.setItem(
     SAVE_KEY,
@@ -709,7 +709,7 @@ function updateAtmosphere(dt) {
   skyMat.uniforms.sunDir.value.copy(sunDir);
   skyMat.uniforms.timeOfDay.value = day;
 
-  const pos = controls.getObject().position;
+  const pos = controls.object.position;
   particles.position.set(pos.x, pos.y, pos.z);
   const arr = particles.geometry.attributes.position.array;
   const weather = planet().weather;
@@ -761,7 +761,7 @@ function updatePlayer(dt) {
     grounded = false;
   }
 
-  const obj = controls.getObject();
+  const obj = controls.object;
   obj.position.x += velocity.x * dt;
   obj.position.z += velocity.z * dt;
   obj.position.y += velocity.y * dt;
@@ -795,7 +795,7 @@ function updatePlayer(dt) {
 }
 
 function updateEnemies(dt) {
-  const player = controls.getObject().position;
+  const player = controls.object.position;
   let nearest = Infinity;
   for (const e of state.enemies) {
     e.phase += dt;
@@ -819,7 +819,7 @@ function updateEnemies(dt) {
 }
 
 function tryAttack() {
-  const player = controls.getObject().position;
+  const player = controls.object.position;
   let hit = null;
   let best = 3.2;
   for (const e of state.enemies) {

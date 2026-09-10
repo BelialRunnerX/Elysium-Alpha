@@ -57,6 +57,7 @@ html, body, #app {
 .title-atmosphere {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background:
     linear-gradient(115deg, transparent 40%, rgba(74, 255, 192, 0.06) 50%, transparent 60%),
     radial-gradient(circle at 70% 80%, rgba(224, 122, 95, 0.12), transparent 40%);
