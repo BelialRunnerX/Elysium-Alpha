@@ -1,5 +1,19 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { bindMaterials } from './materials.js';
+import {
+  createTerraDrone,
+  createRover,
+  createOrbiScout,
+  createHoverBike,
+  createFieldFabricator,
+} from './assets/heroes.js';
+
+bindMaterials(THREE);
 
 const SAVE_KEY = 'elysium_browser_save_v1';
 const WORLD = 192;
@@ -284,6 +298,9 @@ const editGroup = new THREE.Group();
 scene.add(editGroup);
 const enemyGroup = new THREE.Group();
 scene.add(enemyGroup);
+const heroGroup = new THREE.Group();
+scene.add(heroGroup);
+const heroActors = [];
 const particleGeo = new THREE.BufferGeometry();
 const PARTICLE_COUNT = 900;
 const particlePos = new Float32Array(PARTICLE_COUNT * 3);
@@ -304,6 +321,12 @@ const particles = new THREE.Points(
   }),
 );
 scene.add(particles);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.45, 0.6, 0.85);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
 
 const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
@@ -326,6 +349,88 @@ function surfaceY(x, z) {
   while (state.edits[editKey(ix, y + 1, iz)]) y += 1;
   while (y > -8 && state.edits[editKey(ix, y, iz)] === -1) y -= 1;
   return y;
+}
+
+
+function clearHeroes() {
+  while (heroGroup.children.length) {
+    const m = heroGroup.children.pop();
+    m.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        if (Array.isArray(o.material)) o.material.forEach((x) => x.dispose?.());
+        else o.material.dispose?.();
+      }
+    });
+  }
+  heroActors.length = 0;
+}
+
+function placeHero(factory, x, z, yaw = 0, scale = 1) {
+  const root = factory(THREE);
+  const y = surfaceY(x, z);
+  root.position.set(x, y, z);
+  root.rotation.y = yaw;
+  root.scale.setScalar(scale);
+  root.userData.baseY = y + (root.userData.hover ? 1.05 : 0);
+  if (root.userData.hover) root.position.y = root.userData.baseY;
+  root.userData.t = Math.random() * Math.PI * 2;
+  root.traverse((o) => {
+    if (o.isMesh && o.userData.pulse && o.material && o.material.clone) {
+      // keep existing pulse clones
+    }
+  });
+  heroGroup.add(root);
+  heroActors.push(root);
+  return root;
+}
+
+function spawnHeroes() {
+  clearHeroes();
+  // Field camp near LZ — AAA concept roster
+  placeHero(createTerraDrone, 6, -4, 0.4, 1.0);
+  placeHero(createRover, -8, 5, -0.6, 1.1);
+  placeHero(createOrbiScout, 3, 8, 0.2, 1.0);
+  placeHero(createHoverBike, -5, -9, 1.1, 1.05);
+  placeHero(createFieldFabricator, 10, 2, -0.3, 0.95);
+  placeHero(createOrbiScout, -2, 2, 1.4, 0.85);
+  placeHero(createTerraDrone, 12, -8, -1.0, 0.9);
+}
+
+function updateHeroes(dt) {
+  for (const root of heroActors) {
+    root.userData.t += dt;
+    const t = root.userData.t;
+    if (root.userData.hover) {
+      root.position.y = root.userData.baseY + 0.35 + Math.sin(t * 1.7) * 0.12;
+      root.rotation.y += dt * 0.35;
+    } else {
+      root.rotation.y += Math.sin(t * 0.6) * dt * 0.05;
+    }
+    root.traverse((o) => {
+      // Only pulse cloned materials / lights — never shared kit materials
+      if (o.isMesh && o.userData.pulse && o.material && o.material.emissiveIntensity != null && o.material !== o.userData._sharedEmissive) {
+        o.material.emissiveIntensity = 1.6 + Math.sin(t * 3.2) * 0.7;
+      }
+      if (o.isLight && o.isPointLight) {
+        o.intensity = 0.7 + Math.sin(t * 2.4) * 0.35;
+      }
+    });
+  }
+}
+
+function nearestHero(maxDist = 4.5) {
+  const p = controls.object.position;
+  let best = null;
+  let bestD = maxDist;
+  for (const root of heroActors) {
+    const d = root.position.distanceTo(p);
+    if (d < bestD) {
+      bestD = d;
+      best = root;
+    }
+  }
+  return best;
 }
 
 function buildTerrain() {
@@ -407,6 +512,7 @@ function buildTerrain() {
 
   rebuildEdits();
   spawnEnemies();
+  spawnHeroes();
   $('planet-label').textContent = p.name;
   requestAnimationFrame(() => $('loading').classList.add('hidden'));
 }
@@ -511,6 +617,10 @@ function setMode(mode) {
   $('travel').classList.toggle('active', mode === 'travel');
   $('map').classList.toggle('hidden', mode !== 'map');
   $('map').classList.toggle('active', mode === 'map');
+  if ($('craft')) {
+    $('craft').classList.toggle('hidden', mode !== 'craft');
+    $('craft').classList.toggle('active', mode === 'craft');
+  }
   if (mode === 'play') {
     if (!controls.isLocked) controls.lock();
   } else if (controls.isLocked) {
@@ -575,6 +685,32 @@ function renderHotbar() {
     el.innerHTML = `<span class="n">${i + 1}</span>${b.name}<br>${state.inventory[b.id] ?? 0}`;
     bar.appendChild(el);
   });
+}
+
+
+function renderCraft() {
+  const list = $('craft-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const recipes = [
+    { name: 'Steel Plate ×2', needs: '2 IRON + 1 COAL', give: () => { state.inventory[3] = (state.inventory[3] ?? 0) + 2; } },
+    { name: 'Registry Beacon', needs: '4 STEEL + 2 COPPER', give: () => { state.inventory[4] = (state.inventory[4] ?? 0) + 1; } },
+    { name: 'Field Ration Pack', needs: '2 DIRT + 1 PLANKS', give: () => { state.vit = clamp(state.vit + 20, 0, 100); state.hng = clamp(state.hng + 25, 0, 100); } },
+  ];
+  for (const r of recipes) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'planet-card';
+    row.innerHTML = `<h3>${r.name}</h3><p>${r.needs}</p>`;
+    row.onclick = () => {
+      r.give();
+      renderHotbar();
+      updateHud();
+      toast(`FABRICATED · ${r.name}`, 2);
+      raiseSuspicion(0.8);
+    };
+    list.appendChild(row);
+  }
 }
 
 function renderTravel() {
@@ -852,6 +988,14 @@ function frame(now) {
     updateAtmosphere(dt);
     updatePlayer(dt);
     updateEnemies(dt);
+    updateHeroes(dt);
+    const hero = nearestHero();
+    if (hero && (!state.enemies.length || true)) {
+      const label = hero.userData.label || 'FIELD UNIT';
+      if (!$('interact').textContent.includes('HOSTILE')) {
+        $('interact').textContent = `E · ${label}`;
+      }
+    }
     if (state.messageTimer > 0) {
       state.messageTimer -= dt;
       if (state.messageTimer <= 0) $('toast').classList.remove('show');
@@ -866,7 +1010,7 @@ function frame(now) {
   }
 
   sky.position.copy(camera.position);
-  renderer.render(scene, camera);
+  composer.render();
   requestAnimationFrame(frame);
 }
 
@@ -884,7 +1028,7 @@ function startGame(continueSave) {
   buildTerrain();
   spawnPlayer(!continueSave);
   setMode('play');
-  toast(continueSave ? 'SAVE RELOADED // SURFACE ONLINE' : 'UNFILED. Mine, build, survive the claim.', 3.5);
+  toast(continueSave ? 'SAVE RELOADED // HERO CAMP ONLINE' : 'UNFILED. Hero assets on-site — approach and press E.', 3.5);
   updateHud();
 }
 
@@ -905,11 +1049,14 @@ $('btn-map').onclick = () => {
   setMode('map');
 };
 $('btn-map-close').onclick = () => setMode('pause');
+if ($('btn-craft-close')) $('btn-craft-close').onclick = () => setMode('pause');
 
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  bloomPass.setSize(innerWidth, innerHeight);
 });
 
 addEventListener('keydown', (e) => {
@@ -931,11 +1078,26 @@ addEventListener('keydown', (e) => {
     }
     if (e.code === 'KeyF') tryAttack();
     if (e.code === 'KeyE') {
-      state.vit = clamp(state.vit + 8, 0, 100);
-      state.o2 = clamp(state.o2 + 12, 0, 100);
-      state.hng = clamp(state.hng + 10, 0, 100);
-      toast('FIELD RATION / SUIT CYCLE', 1.5);
-      updateHud();
+      const hero = nearestHero();
+      if (hero) {
+        toast(`${hero.userData.label || 'UNIT'} · SYSTEMS ONLINE`, 2.2);
+        if (hero.userData.kind === 'fabricator') {
+          raiseSuspicion(1.5);
+          state.inventory[3] = (state.inventory[3] ?? 0) + 1;
+          renderHotbar();
+          toast('FAB-01 OUTPUT · +1 STEEL', 2.0);
+        }
+      } else {
+        state.vit = clamp(state.vit + 8, 0, 100);
+        state.o2 = clamp(state.o2 + 12, 0, 100);
+        state.hng = clamp(state.hng + 10, 0, 100);
+        toast('FIELD RATION / SUIT CYCLE', 1.5);
+        updateHud();
+      }
+    }
+    if (e.code === 'KeyC') {
+      renderCraft();
+      setMode('craft');
     }
     const num = Number(e.key);
     if (num >= 1 && num <= 8) {
@@ -944,7 +1106,7 @@ addEventListener('keydown', (e) => {
     }
   } else if (e.code === 'Escape') {
     if (state.mode === 'pause') setMode('play');
-    else if (state.mode === 'travel' || state.mode === 'map') setMode('pause');
+    else if (state.mode === 'travel' || state.mode === 'map' || state.mode === 'craft') setMode('pause');
   }
 });
 
