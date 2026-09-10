@@ -217,6 +217,7 @@ export function hullDecal(text, w = 0.42, h = 0.12) {
     transparent: true,
     depthWrite: false,
   });
+  mat.name = 'HullDecal';
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   return mesh;
 }

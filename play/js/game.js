@@ -357,10 +357,7 @@ function clearHeroes() {
     const m = heroGroup.children.pop();
     m.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
-      if (o.material) {
-        if (Array.isArray(o.material)) o.material.forEach((x) => x.dispose?.());
-        else o.material.dispose?.();
-      }
+      // Do not dispose materials — elysiumMaterials() kit is shared/cached.
     });
   }
   heroActors.length = 0;
@@ -368,12 +365,12 @@ function clearHeroes() {
 
 function placeHero(factory, x, z, yaw = 0, scale = 1) {
   const root = factory(THREE);
-  const y = surfaceY(x, z);
+  const y = surfaceY(x, z) + 0.05;
   root.position.set(x, y, z);
   root.rotation.y = yaw;
   root.scale.setScalar(scale);
-  root.userData.baseY = y + (root.userData.hover ? 1.05 : 0);
-  if (root.userData.hover) root.position.y = root.userData.baseY;
+  root.userData.baseY = y + (root.userData.hover ? 1.15 : 0);
+  root.position.y = root.userData.baseY;
   root.userData.t = Math.random() * Math.PI * 2;
   root.traverse((o) => {
     if (o.isMesh && o.userData.pulse && o.material && o.material.clone) {
@@ -387,14 +384,23 @@ function placeHero(factory, x, z, yaw = 0, scale = 1) {
 
 function spawnHeroes() {
   clearHeroes();
-  // Field camp near LZ — AAA concept roster
-  placeHero(createTerraDrone, 6, -4, 0.4, 1.0);
-  placeHero(createRover, -8, 5, -0.6, 1.1);
-  placeHero(createOrbiScout, 3, 8, 0.2, 1.0);
-  placeHero(createHoverBike, -5, -9, 1.1, 1.05);
-  placeHero(createFieldFabricator, 10, 2, -0.3, 0.95);
-  placeHero(createOrbiScout, -2, 2, 1.4, 0.85);
-  placeHero(createTerraDrone, 12, -8, -1.0, 0.9);
+  // Field camp clustered at LZ so the art bar is unmistakable on Descend
+  const roster = [
+    [createTerraDrone, 4.5, -2.5, 0.5, 1.05],
+    [createRover, -5.5, 3.5, -0.7, 1.15],
+    [createOrbiScout, 2.5, 4.5, 0.3, 1.0],
+    [createHoverBike, -3.5, -5.5, 1.2, 1.05],
+    [createFieldFabricator, 7.5, 1.5, -0.4, 1.0],
+    [createOrbiScout, -1.5, 1.2, 1.5, 0.9],
+  ];
+  for (const [factory, x, z, yaw, scale] of roster) {
+    try {
+      placeHero(factory, x, z, yaw, scale);
+    } catch (err) {
+      console.error('Hero spawn failed', factory.name, err);
+      toast(`HERO BUILD FAULT · ${factory.name}`, 4);
+    }
+  }
 }
 
 function updateHeroes(dt) {
@@ -419,7 +425,7 @@ function updateHeroes(dt) {
   }
 }
 
-function nearestHero(maxDist = 4.5) {
+function nearestHero(maxDist = 7.5) {
   const p = controls.object.position;
   let best = null;
   let bestD = maxDist;
@@ -512,7 +518,8 @@ function buildTerrain() {
 
   rebuildEdits();
   spawnEnemies();
-  spawnHeroes();
+  if (state.mode === 'play') spawnHeroes();
+  else clearHeroes();
   $('planet-label').textContent = p.name;
   requestAnimationFrame(() => $('loading').classList.add('hidden'));
 }
@@ -1025,9 +1032,10 @@ function startGame(continueSave) {
     state.positions = PLANETS.map(() => null);
     state.inventory = Object.fromEntries(BLOCKS.map((b) => [b.id, b.id === 0 ? 24 : b.id < 4 ? 12 : 4]));
   }
-  buildTerrain();
-  spawnPlayer(!continueSave);
   setMode('play');
+  buildTerrain();
+  spawnHeroes();
+  spawnPlayer(!continueSave);
   toast(continueSave ? 'SAVE RELOADED // HERO CAMP ONLINE' : 'UNFILED. Hero assets on-site — approach and press E.', 3.5);
   updateHud();
 }
