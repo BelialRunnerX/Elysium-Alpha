@@ -227,7 +227,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-scene.environmentIntensity = 0.55;
+scene.environmentIntensity = 0.4;
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 1200);
 const controls = new PointerLockControls(camera, document.body);
 
@@ -888,9 +888,9 @@ function updateAtmosphere(dt) {
   sun.target.position.set(0, 0, 0);
   sunMesh.position.copy(sun.position);
   const day = clamp(sunDir.y * 1.2, 0.05, 1);
-  sun.intensity = 0.45 + day * 1.55;
-  hemi.intensity = 0.35 + day * 0.55;
-  renderer.toneMappingExposure = 0.95 + day * 0.55;
+  sun.intensity = 0.4 + day * 1.25;
+  hemi.intensity = 0.32 + day * 0.45;
+  renderer.toneMappingExposure = 0.85 + day * 0.4;
   skyMat.uniforms.sunDir.value.copy(sunDir);
   skyMat.uniforms.timeOfDay.value = day;
 
