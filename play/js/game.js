@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { bindMaterials } from './materials.js';
 import {
   createTerraDrone,
@@ -204,7 +205,7 @@ const state = {
   hng: 100,
   messageTimer: 0,
   message: '',
-  worldTime: 0.22,
+  worldTime: 0.28,
   edits: {},
   enemies: [],
   positions: PLANETS.map(() => null),
@@ -224,12 +225,15 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 1200);
 const controls = new PointerLockControls(camera, document.body);
 
-const hemi = new THREE.HemisphereLight(0xb8d4ff, 0x2a241c, 0.55);
+const hemi = new THREE.HemisphereLight(0xd8e8ff, 0x3a3228, 0.75);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff2d6, 1.35);
+const sun = new THREE.DirectionalLight(0xfff5e0, 1.85);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.near = 1;
@@ -241,7 +245,10 @@ sun.shadow.camera.bottom = -80;
 scene.add(sun);
 scene.add(sun.target);
 
-const ambientFill = new THREE.AmbientLight(0x203038, 0.18);
+const ambientFill = new THREE.AmbientLight(0x405060, 0.32);
+const rimLight = new THREE.DirectionalLight(0x88e8ff, 0.35);
+rimLight.position.set(-40, 30, -60);
+scene.add(rimLight);
 scene.add(ambientFill);
 
 const skyMat = new THREE.ShaderMaterial({
@@ -324,7 +331,7 @@ scene.add(particles);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.45, 0.6, 0.85);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.78);
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
 
@@ -384,6 +391,42 @@ function placeHero(factory, x, z, yaw = 0, scale = 1) {
 
 function spawnHeroes() {
   clearHeroes();
+  // Ceramic LZ pad — stages the hero camp like a concept sheet floor
+  const padY = surfaceY(2, 0);
+  const pad = new THREE.Mesh(
+    new THREE.CylinderGeometry(9.5, 10, 0.18, 48),
+    new THREE.MeshStandardMaterial({
+      color: 0xe8eef2,
+      roughness: 0.42,
+      metalness: 0.08,
+    }),
+  );
+  pad.position.set(2, padY + 0.05, 0);
+  pad.receiveShadow = true;
+  pad.userData.isPad = true;
+  heroGroup.add(pad);
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(9.2, 0.06, 8, 64),
+    new THREE.MeshStandardMaterial({
+      color: 0x3de0ff,
+      emissive: 0x3de0ff,
+      emissiveIntensity: 1.8,
+      roughness: 0.3,
+      metalness: 0.2,
+      toneMapped: false,
+    }),
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(2, padY + 0.16, 0);
+  heroGroup.add(ring);
+  const goldRing = new THREE.Mesh(
+    new THREE.TorusGeometry(8.4, 0.04, 8, 64),
+    new THREE.MeshStandardMaterial({ color: 0xe0b93a, roughness: 0.25, metalness: 1 }),
+  );
+  goldRing.rotation.x = Math.PI / 2;
+  goldRing.position.set(2, padY + 0.15, 0);
+  heroGroup.add(goldRing);
+
   // Field camp clustered at LZ so the art bar is unmistakable on Descend
   const roster = [
     [createTerraDrone, 4.5, -2.5, 0.5, 1.05],
@@ -845,9 +888,9 @@ function updateAtmosphere(dt) {
   sun.target.position.set(0, 0, 0);
   sunMesh.position.copy(sun.position);
   const day = clamp(sunDir.y * 1.2, 0.05, 1);
-  sun.intensity = 0.25 + day * 1.3;
-  hemi.intensity = 0.2 + day * 0.45;
-  renderer.toneMappingExposure = 0.72 + day * 0.45;
+  sun.intensity = 0.45 + day * 1.55;
+  hemi.intensity = 0.35 + day * 0.55;
+  renderer.toneMappingExposure = 0.95 + day * 0.55;
   skyMat.uniforms.sunDir.value.copy(sunDir);
   skyMat.uniforms.timeOfDay.value = day;
 
@@ -1028,6 +1071,7 @@ function startGame(continueSave) {
       state.claimed = Array(PLANETS.length).fill(false);
       state.suspicion = 0;
       state.vit = state.o2 = state.eng = state.hng = 100;
+    state.worldTime = 0.3; // morning showcase light for ceramic/gold
       state.positions = PLANETS.map(() => null);
       state.inventory = Object.fromEntries(BLOCKS.map((b) => [b.id, b.id === 0 ? 24 : b.id < 4 ? 12 : 4]));
     }

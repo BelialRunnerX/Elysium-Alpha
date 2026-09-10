@@ -43,3 +43,13 @@ Next fidelity steps: bake high-poly → GLB with Substance-style maps, LODs, and
 Procedural Three.js builders approximate the sheets (palette, silhouette, emissives, hull codes, modular hooks). They are **not** yet Substance-baked hero GLBs.
 
 **Next fidelity step:** high-poly sculpt → bake normals/AO/curvature → GLB + LODs + decal atlas (ELYSIUM / unit codes) imported into `play/` and Godot.
+
+
+## Fidelity pass (procedural)
+
+Current builders emphasize sheet-accurate:
+- **Terra-Drone** — white armored legs, gold joint caps, cyan eye, solar top tiles, manipulator
+- **Orbi Scout** — spherical core + **four articulated fin pods** (not stick legs), scan cone
+- **Rover / Hover Bike / Fabricator** — denser panel belts, gold rails, emissive strips, hull codes
+
+Lighting: PMREM room env + brighter hemi/sun + cyan rim + ceramic LZ pad staging.
