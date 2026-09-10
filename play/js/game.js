@@ -628,9 +628,7 @@ function setMode(mode) {
     $('craft').classList.toggle('hidden', mode !== 'craft');
     $('craft').classList.toggle('active', mode === 'craft');
   }
-  if (mode === 'play') {
-    if (!controls.isLocked) controls.lock();
-  } else if (controls.isLocked) {
+  if (mode !== 'play' && controls.isLocked) {
     controls.unlock();
   }
   $("c").style.pointerEvents = mode === "play" ? "auto" : "none";
@@ -1022,26 +1020,37 @@ function frame(now) {
 }
 
 function startGame(continueSave) {
-  if (continueSave) loadSave();
-  else {
-    localStorage.removeItem(SAVE_KEY);
-    state.edits = {};
-    state.claimed = Array(PLANETS.length).fill(false);
-    state.suspicion = 0;
-    state.vit = state.o2 = state.eng = state.hng = 100;
-    state.positions = PLANETS.map(() => null);
-    state.inventory = Object.fromEntries(BLOCKS.map((b) => [b.id, b.id === 0 ? 24 : b.id < 4 ? 12 : 4]));
+  try {
+    if (continueSave) loadSave();
+    else {
+      localStorage.removeItem(SAVE_KEY);
+      state.edits = {};
+      state.claimed = Array(PLANETS.length).fill(false);
+      state.suspicion = 0;
+      state.vit = state.o2 = state.eng = state.hng = 100;
+      state.positions = PLANETS.map(() => null);
+      state.inventory = Object.fromEntries(BLOCKS.map((b) => [b.id, b.id === 0 ? 24 : b.id < 4 ? 12 : 4]));
+    }
+    // Build world before pointer-lock so a lock failure cannot strand the title screen
+    state.mode = 'play';
+    buildTerrain();
+    spawnHeroes();
+    spawnPlayer(!continueSave);
+    setMode('play');
+    toast(continueSave ? 'SAVE RELOADED // HERO CAMP ONLINE' : 'UNFILED. Hero camp on LZ — white ceramic units nearby. Press E.', 3.5);
+    updateHud();
+  } catch (err) {
+    console.error(err);
+    $('loading')?.classList.add('hidden');
+    toast('BOOT FAULT · ' + (err.message || err), 6);
+    setMode('title');
   }
-  setMode('play');
-  buildTerrain();
-  spawnHeroes();
-  spawnPlayer(!continueSave);
-  toast(continueSave ? 'SAVE RELOADED // HERO CAMP ONLINE' : 'UNFILED. Hero assets on-site — approach and press E.', 3.5);
-  updateHud();
 }
 
-$('btn-new').onclick = () => startGame(false);
-$('btn-continue').onclick = () => startGame(true);
+window.__elysiumNew = () => startGame(false);
+window.__elysiumContinue = () => startGame(true);
+$('btn-new').onclick = window.__elysiumNew;
+$('btn-continue').onclick = window.__elysiumContinue;
 $('btn-resume').onclick = () => setMode('play');
 $('btn-title').onclick = () => {
   persist();

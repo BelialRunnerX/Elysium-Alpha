@@ -98,12 +98,13 @@ export function elysiumMaterials() {
   cache = {
     ceramic: new THREE.MeshStandardMaterial({
       name: 'CeramicComposite',
-      color: 0xf4f6f8,
+      color: 0xffffff,
       map: ceramic,
       normalMap: panelN,
       normalScale: new THREE.Vector2(0.35, 0.35),
-      roughness: 0.42,
-      metalness: 0.08,
+      roughness: 0.38,
+      metalness: 0.06,
+      envMapIntensity: 1.1,
     }),
     graphite: new THREE.MeshStandardMaterial({
       name: 'GraphiteMetal',
