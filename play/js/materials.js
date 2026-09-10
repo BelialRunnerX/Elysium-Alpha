@@ -115,9 +115,11 @@ export function elysiumMaterials() {
     }),
     gold: new THREE.MeshStandardMaterial({
       name: 'SolarGold',
-      color: 0xc9a227,
-      roughness: 0.28,
+      color: 0xe0b93a,
+      roughness: 0.22,
       metalness: 1.0,
+      emissive: 0x3a2808,
+      emissiveIntensity: 0.15,
     }),
     emissive: new THREE.MeshStandardMaterial({
       name: 'EmissiveCyan',

@@ -36,3 +36,10 @@ Materials: `play/js/materials.js` (`elysiumMaterials()`).
 Meshes: `play/js/assets/heroes.js`.
 
 Next fidelity steps: bake high-poly → GLB with Substance-style maps, LODs, and decal atlases (ELYSIUM / unit codes) matching the sheets.
+
+
+## Fidelity ceiling (current vs sheets)
+
+Procedural Three.js builders approximate the sheets (palette, silhouette, emissives, hull codes, modular hooks). They are **not** yet Substance-baked hero GLBs.
+
+**Next fidelity step:** high-poly sculpt → bake normals/AO/curvature → GLB + LODs + decal atlas (ELYSIUM / unit codes) imported into `play/` and Godot.
