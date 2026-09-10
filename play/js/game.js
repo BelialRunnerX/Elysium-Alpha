@@ -516,6 +516,7 @@ function setMode(mode) {
   } else if (controls.isLocked) {
     controls.unlock();
   }
+  $("c").style.pointerEvents = mode === "play" ? "auto" : "none";
 }
 
 function persist() {
@@ -978,3 +979,4 @@ buildTerrain();
 camera.position.set(40, 24, 40);
 camera.lookAt(0, 8, 0);
 requestAnimationFrame(frame);
+setMode('title');
