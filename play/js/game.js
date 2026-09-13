@@ -497,14 +497,31 @@ function updateHeroes(dt) {
   }
 }
 
+function heroInteractRadius(root) {
+  const kind = root.userData.kind;
+  if (kind === 'orbi_scout') return 3.2; // small so it cannot steal Rover/Bike prompts
+  if (kind === 'fabricator') return 3.6;
+  const spec = root.userData.spec || catalogueFor(kind);
+  if (spec?.rideable) return 5.5;
+  return 4.5;
+}
+
 function nearestHero(maxDist = 7.5) {
   const p = controls.object.position;
   let best = null;
-  let bestD = maxDist;
+  let bestScore = Infinity;
   for (const root of heroActors) {
+    if (root === state.vehicle) continue;
+    // Escorting Orbi orbits the player — never steal BOARD prompts from hulls.
+    if (root === state.escort) continue;
     const d = root.position.distanceTo(p);
-    if (d < bestD) {
-      bestD = d;
+    const radius = Math.min(maxDist, heroInteractRadius(root));
+    if (d > radius) continue;
+    // Prefer rideable hulls when ranges overlap (Orbi follow orbit used to win).
+    const spec = root.userData.spec || catalogueFor(root.userData.kind);
+    const score = d - (spec?.rideable ? 1.25 : 0);
+    if (score < bestScore) {
+      bestScore = score;
       best = root;
     }
   }
@@ -1274,8 +1291,24 @@ function startGame(continueSave) {
 
 window.__elysiumNew = () => startGame(false);
 window.__elysiumContinue = () => startGame(true);
-$('btn-new').onclick = window.__elysiumNew;
-$('btn-continue').onclick = window.__elysiumContinue;
+function bindTitleAction(id, fn) {
+  const el = $(id);
+  if (!el) return;
+  el.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fn();
+  };
+  el.onpointerdown = (e) => {
+    // Pointer-down covers automation/agents that synthesize down without click.
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    fn();
+  };
+}
+bindTitleAction('btn-new', window.__elysiumNew);
+bindTitleAction('btn-continue', window.__elysiumContinue);
 $('btn-resume').onclick = () => setMode('play');
 $('btn-title').onclick = () => {
   persist();
