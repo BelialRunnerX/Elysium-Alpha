@@ -1,0 +1,7 @@
+#include "automation/TcaRuntime.hpp"
+#include "core/Saturating.hpp"
+#include <algorithm>
+namespace elysium::automation {
+std::vector<ActionRequest>TcaRuntime::evaluate(std::span<const TcaRule>rules,std::span<const SignalValue>signals){std::vector<TcaRule>r(rules.begin(),rules.end());std::sort(r.begin(),r.end(),[](auto&a,auto&b){if(a.priority!=b.priority)return a.priority<b.priority;return a.ruleId<b.ruleId;});std::vector<ActionRequest>out;for(const auto&rule:r){if(!rule.enabled||!rule.ruleId||!rule.trigger||!rule.action)continue;auto s=std::find_if(signals.begin(),signals.end(),[&](auto&x){return x.id==rule.trigger;});if(s==signals.end())continue;double v=safe::finiteClamp(s->numeric,-safe::PublishedScalarCeiling,safe::PublishedScalarCeiling),prev=previous_.contains(rule.ruleId)?previous_[rule.ruleId]:v;bool fire=false;switch(rule.comparison){case Comparison::Always:fire=true;break;case Comparison::Equal:fire=v==rule.threshold;break;case Comparison::NotEqual:fire=v!=rule.threshold;break;case Comparison::Less:fire=v<rule.threshold;break;case Comparison::LessEqual:fire=v<=rule.threshold;break;case Comparison::Greater:fire=v>rule.threshold;break;case Comparison::GreaterEqual:fire=v>=rule.threshold;break;case Comparison::RisingEdge:fire=prev<rule.threshold&&v>=rule.threshold;break;case Comparison::FallingEdge:fire=prev>rule.threshold&&v<=rule.threshold;break;}previous_[rule.ruleId]=v;if(fire)out.push_back({rule.ruleId,rule.action,rule.target,v});}return out;}
+void TcaRuntime::reset(){previous_.clear();}
+} // namespace elysium::automation

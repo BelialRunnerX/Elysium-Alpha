@@ -1,0 +1,11 @@
+{
+  "name": "elysium",
+  "version": "0.1.0",
+  "description": "Voxel planet engine - procedural world generation and an OpenGL renderer",
+  "homepage": "https://github.com/",
+  "dependencies": [
+    "zlib",
+    "glfw3",
+    "entt"
+  ]
+}

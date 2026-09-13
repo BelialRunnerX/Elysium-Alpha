@@ -1,0 +1,18 @@
+// Intended function: Track squad morale, shock, casualties, leadership, retreat, surrender, and rally.
+#pragma once
+#include <cstdint>
+#include <vector>
+namespace elysium::combatx {
+struct MoraleCombatSystemRequest { std::uint64_t id{}, owner{}, target{}, tick{}; double value{}, rate{}; std::uint32_t kind{}, flags{}; };
+struct MoraleCombatSystemRecord { std::uint64_t revision{}, id{}, owner{}, target{}, tick{}; double value{}, total{}, pressure{}; std::uint32_t kind{}, flags{}; bool active{false}; };
+struct MoraleCombatSystemNotice { std::uint64_t sequence{}, id{}, target{}, tick{}; double value{}; std::uint32_t kind{}; };
+class MoraleCombatSystemSystem {
+public:
+ bool submit(const MoraleCombatSystemRequest&); bool remove(std::uint64_t); void step(std::uint64_t,double);
+ [[nodiscard]] const MoraleCombatSystemRecord* find(std::uint64_t) const; [[nodiscard]] std::vector<MoraleCombatSystemRecord> snapshot() const;
+ std::vector<MoraleCombatSystemNotice> drainNotices(); void clear();
+private:
+ MoraleCombatSystemRecord* mutableFind(std::uint64_t); void notice(const MoraleCombatSystemRecord&,double,std::uint32_t);
+ std::uint64_t revision_{1}, sequence_{1}; std::vector<MoraleCombatSystemRecord> records_; std::vector<MoraleCombatSystemNotice> notices_;
+};
+}

@@ -1,0 +1,4 @@
+// Intended function: apply only contiguous declared migration steps and fail loudly when a historical schema gap has no translation path.
+#include "save/SaveMigration.hpp"
+#include <algorithm>
+namespace elysium{bool SaveMigrationRegistry::add(SaveMigrationStep s){if(s.toVersion!=s.fromVersion+1||!s.migrate)return false;for(auto&x:steps_)if(x.fromVersion==s.fromVersion)return false;steps_.push_back(std::move(s));std::sort(steps_.begin(),steps_.end(),[](auto&a,auto&b){return a.fromVersion<b.fromVersion;});return true;}std::optional<SaveMigrationContext>SaveMigrationRegistry::migrate(std::uint64_t w,std::uint32_t f,std::uint32_t t,std::string p)const{SaveMigrationContext c{w,f,t,std::move(p),{}};for(auto v=f;v<t;++v){auto i=std::find_if(steps_.begin(),steps_.end(),[&](auto&s){return s.fromVersion==v&&s.toVersion==v+1;});if(i==steps_.end()||!i->migrate(c))return std::nullopt;c.fromVersion=v+1;}return c;}}

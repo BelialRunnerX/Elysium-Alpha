@@ -1,0 +1,22 @@
+# Build output
+build/
+build*/
+out/
+*.edits
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+CMakeSettings.json
+
+# vcpkg
+vcpkg_installed/
+
+# Vendored dependency, if you drop one here rather than using a package
+third_party/
+
+# Editors
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "elysium:neutronium_boots"},
+    {"item": "elysium:neutronium_boots"}
+  ],
+  "result": {"item": "elysium:neutronium_boots"}
+}

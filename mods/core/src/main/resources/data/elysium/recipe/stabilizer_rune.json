@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " v ",
+    "vcv",
+    " v "
+  ],
+  "key": {
+    "v": "elysium:voidglass_ingot",
+    "c": "minecraft:glistering_melon_slice"
+  },
+  "result": {
+    "id": "elysium:stabilizer_rune",
+    "count": 1
+  }
+}

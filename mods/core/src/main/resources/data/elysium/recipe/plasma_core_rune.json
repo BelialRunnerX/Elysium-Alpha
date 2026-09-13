@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " v ",
+    "vcv",
+    " v "
+  ],
+  "key": {
+    "v": "elysium:voidglass_ingot",
+    "c": "minecraft:magma_cream"
+  },
+  "result": {
+    "id": "elysium:plasma_core_rune",
+    "count": 1
+  }
+}

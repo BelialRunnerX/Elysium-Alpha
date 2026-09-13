@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " v ",
+    "vcv",
+    " v "
+  ],
+  "key": {
+    "v": "elysium:voidglass_ingot",
+    "c": "minecraft:ender_pearl"
+  },
+  "result": {
+    "id": "elysium:voidward_rune",
+    "count": 1
+  }
+}

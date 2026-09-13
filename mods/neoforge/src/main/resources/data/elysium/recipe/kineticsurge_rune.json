@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " v ",
+    "vcv",
+    " v "
+  ],
+  "key": {
+    "v": "elysium:voidglass_ingot",
+    "c": "minecraft:slime_ball"
+  },
+  "result": {
+    "id": "elysium:kineticsurge_rune",
+    "count": 1
+  }
+}

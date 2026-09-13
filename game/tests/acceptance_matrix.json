@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "status_vocabulary": [
+    "PASS",
+    "HEADLESS ONLY",
+    "NATIVE PENDING"
+  ],
+  "gates": [
+    {
+      "id": "CONTRACT-GENERATOR",
+      "name": "Fixed generator corpus and compatibility identity",
+      "status_when_tests_pass": "PASS",
+      "proof_tests": [
+        "acceptance_generator_fixed_corpus"
+      ],
+      "notes": "Fixed seed/version/fingerprint digest; accidental baseline drift fails loudly."
+    },
+    {
+      "id": "CONTRACT-WORKERS",
+      "name": "Byte-identical deterministic output across 0/1/2/4/8 workers",
+      "status_when_tests_pass": "PASS",
+      "proof_tests": [
+        "regression_worker_count_mesh_determinism"
+      ],
+      "notes": "Runs the existing authoritative standalone mesh/reconstruction hash regression unchanged through 0, 1, 2, 4 and 8 worker configurations."
+    },
+    {
+      "id": "CONTRACT-SEAL",
+      "name": "Bounded sealed-volume termination rule",
+      "status_when_tests_pass": "PASS",
+      "proof_tests": [
+        "acceptance_sealed_volume_budget"
+      ],
+      "notes": "A 27-cell room is open/truncated at budget 27 and sealed when allowed to terminate at budget 28; breach remains open."
+    },
+    {
+      "id": "CONTRACT-PERSISTENCE",
+      "name": "Sparse persistence compatibility and corruption rejection",
+      "status_when_tests_pass": "PASS",
+      "proof_tests": [
+        "acceptance_persistence_negative_rejection",
+        "regression_persistence_roundtrip"
+      ],
+      "notes": "Negative compatibility/corruption rejection is paired with the existing positive transactional round-trip/journal persistence regression, now individually addressable."
+    },
+    {
+      "id": "CONTRACT-INFRA",
+      "name": "Stable address-keyed infrastructure validation",
+      "status_when_tests_pass": "PASS",
+      "proof_tests": [
+        "acceptance_infrastructure_negative_validation",
+        "elysium_headless"
+      ],
+      "notes": "Zero stable IDs, payload-kind mismatches, and payload-carrying tombstones are rejected; broad cross-shard closure/tombstone regressions remain in the existing headless suite."
+    },
+    {
+      "id": "CONTRACT-RENDER-STUB",
+      "name": "Backend-neutral renderer stub lifetime",
+      "status_when_tests_pass": "HEADLESS ONLY",
+      "proof_tests": [
+        "acceptance_renderer_stub_lifetime",
+        "elysium_headless"
+      ],
+      "notes": "Fake backend rejects destroyed handles and broad renderer cache/lifetime tests pass. Real OpenGL/Raylib behavior is not proven by this row."
+    },
+    {
+      "id": "T3-GATE0",
+      "name": "Third Edition Gate 0 - reproducible foundation",
+      "status_when_tests_pass": "PASS",
+      "proof_tests": [
+        "elysium_headless",
+        "acceptance_generator_fixed_corpus",
+        "acceptance_persistence_negative_rejection",
+        "regression_worker_count_mesh_determinism"
+      ],
+      "notes": "Clean headless source configure/build plus the complete suite, fixed generator corpus, persistence rejection, and exact 0/1/2/4/8 worker mesh determinism are required."
+    },
+    {
+      "id": "T3-GATE1",
+      "name": "Third Edition Gate 1 - tactile planet",
+      "status_when_tests_pass": "HEADLESS ONLY",
+      "proof_tests": [
+        "regression_navigation_seam_local_obstacle",
+        "acceptance_sealed_volume_budget",
+        "elysium_headless"
+      ],
+      "notes": "Headless cube-face seam traversal, local authored-obstacle detour, microvoxel/LOD/meshing and collision contracts execute. The authoritative 25/43/0 wall fixture remains external to this standalone tree; real movement feel/GPU continuity remain native proof."
+    },
+    {
+      "id": "T3-GATE2",
+      "name": "Third Edition Gate 2 - survival/base loop",
+      "status_when_tests_pass": "HEADLESS ONLY",
+      "proof_tests": [
+        "regression_room_atmosphere_airlock",
+        "regression_industry_logistics_persistence",
+        "regression_persistence_roundtrip",
+        "acceptance_sealed_volume_budget"
+      ],
+      "notes": "Atmosphere/airlock, industry/logistics, and persistence are separately runnable headless proofs. Full player-facing crafting/survival usability still requires native integration/playtest."
+    },
+    {
+      "id": "T3-GATE3",
+      "name": "Third Edition Gate 3 - consequence loop",
+      "status_when_tests_pass": "HEADLESS ONLY",
+      "proof_tests": [
+        "regression_register_action_director"
+      ],
+      "notes": "Register Action announcement/waves/stable IDs/persistence/beacon-failure behavior are individually runnable headless proof. Full standing/claim/combat integration and native siege play remain outside this standalone proof."
+    },
+    {
+      "id": "T3-GATE4",
+      "name": "Third Edition Gate 4 - travel loop",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [],
+      "notes": "No dedicated headless end-to-end ship repair/takeoff/travel/return acceptance sequence exists in this Part Two checkpoint."
+    },
+    {
+      "id": "T3-GATE5",
+      "name": "Third Edition Gate 5 - slice content/presentation",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [],
+      "notes": "Requires content breadth, UI/audio/onboarding and a 30-60 minute instrumented playtest; not a headless-only claim."
+    },
+    {
+      "id": "F4-PHASE0",
+      "name": "Fourth Edition Phase 0 - ECS substrate and persistence",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [
+        "acceptance_persistence_negative_rejection",
+        "acceptance_infrastructure_negative_validation"
+      ],
+      "notes": "Stable object/persistence contracts are present, but the full Fourth Edition StableId entity serialization plus active-remote-active shard promotion model is not implemented in this standalone tree."
+    },
+    {
+      "id": "F4-PHASE1",
+      "name": "Fourth Edition Phase 1 - seven-person outpost",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [],
+      "notes": "Citizen population, autonomous fortress jobs, stockpiles, hospital loop and military squad integration are not implemented in this standalone Part Two checkpoint."
+    },
+    {
+      "id": "F4-PHASE2",
+      "name": "Fourth Edition Phase 2 - functioning fortress",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [],
+      "notes": "Work details/orders, citizen mind/relationships, institutions, migration/trade and incident breadth are future integration work here."
+    },
+    {
+      "id": "F4-PHASE3",
+      "name": "Fourth Edition Phase 3 - consequences and history",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [
+        "elysium_headless"
+      ],
+      "notes": "The standalone Register Action slice exists, but justice, infiltration, artifacts, Chronicle and retire/reclaim are not yet present."
+    },
+    {
+      "id": "F4-PHASE4",
+      "name": "Fourth Edition Phase 4 - multi-site civilization",
+      "status_when_tests_pass": "NATIVE PENDING",
+      "proof_tests": [],
+      "notes": "Remote outposts, orbital/inter-site logistics, diplomacy and civilization history are outside this checkpoint."
+    }
+  ]
+}

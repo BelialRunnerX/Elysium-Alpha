@@ -1,0 +1,87 @@
+name: Windows Production Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '.bootstrap/**'
+      - '.github/workflows/bootstrap-import.yml'
+      - '.github/workflows/windows-build.yml'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-x64:
+    name: Windows x64 Release
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Verify production source inventory
+        shell: pwsh
+        run: |
+          python tools/generate_production_sources.py
+          git diff --exit-code -- cmake/ProductionSources.cmake
+          $runtime = (Get-ChildItem src -Recurse -Filter *.cpp -File).Count
+          $tests = (Get-ChildItem tests -Recurse -Filter *.cpp -File).Count
+          $tools = (Get-ChildItem tools -Recurse -Filter *.cpp -File).Count
+          $total = $runtime + $tests + $tools
+          Write-Host "runtime=$runtime tests=$tests tools=$tools total=$total"
+          if ($runtime -ne 1588 -or $tests -ne 22 -or $tools -ne 2 -or $total -ne 1612) {
+            throw "Production C++ inventory mismatch"
+          }
+
+      - name: Configure real Raylib + EnTT client
+        shell: pwsh
+        run: >-
+          cmake -S . -B build
+          -G "Visual Studio 18 2026" -A x64
+          -DELYSIUM_BUILD_CLIENT=ON
+          -DELYSIUM_BUILD_TESTS=ON
+          -DELYSIUM_BUILD_TOOLS=ON
+          -DELYSIUM_FETCH_DEPENDENCIES=ON
+          -DELYSIUM_ENFORCE_SOURCE_COVERAGE=ON
+
+      - name: Compile all recovered C++ translation units
+        shell: pwsh
+        run: cmake --build build --config Release --parallel 2
+
+      - name: Run automated tests
+        shell: pwsh
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Install portable Windows bundle
+        shell: pwsh
+        run: cmake --install build --config Release --prefix dist/Elysium
+
+      - name: Verify packaged executable
+        shell: pwsh
+        run: |
+          if (!(Test-Path "dist/Elysium/Elysium.exe")) { throw "Elysium.exe was not packaged" }
+          if (!(Test-Path "dist/Elysium/PRODUCTION_BUILD.md")) { throw "Production build notes were not packaged" }
+
+      - name: Create Windows artifact and SHA-256
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist/Elysium/*" -DestinationPath "Elysium-Windows-x64-Release.zip" -CompressionLevel Optimal
+          $hash = (Get-FileHash "Elysium-Windows-x64-Release.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Elysium-Windows-x64-Release.zip" | Set-Content -NoNewline "Elysium-Windows-x64-Release.zip.sha256"
+          Get-Content "Elysium-Windows-x64-Release.zip.sha256"
+
+      - name: Upload Windows build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Elysium-Windows-x64-Release
+          path: |
+            Elysium-Windows-x64-Release.zip
+            Elysium-Windows-x64-Release.zip.sha256
+          if-no-files-found: error
+          retention-days: 14

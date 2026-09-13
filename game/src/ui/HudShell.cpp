@@ -1,0 +1,4 @@
+#include "ui/HudShell.hpp"
+#include "core/Saturating.hpp"
+#include <algorithm>
+namespace elysium::ui {HudViewModel HudShell::build(const HudInputSnapshot&s,HudTheme t)const{HudViewModel o;t.panelOpacity=elysium::safe::finiteClamp(t.panelOpacity,0.0,1.0);t.textScale=elysium::safe::finiteClamp(t.textScale,0.5,4.0);o.theme=t;o.health=elysium::safe::nonNegative(s.health);o.oxygen=elysium::safe::nonNegative(s.oxygen);o.energy=elysium::safe::nonNegative(s.energy);o.objectiveStableId=s.objectiveStableId;o.biomeContentId=s.biomeContentId;o.tick=s.tick;o.coordX=s.coordX;o.coordY=s.coordY;o.coordZ=s.coordZ;o.hotbarSlots=s.hotbarSlots? s.hotbarSlots:9;o.selectedHotbar=std::min(s.selectedHotbar,o.hotbarSlots-1);o.subvoxelMode=s.subvoxelMode;o.showOxygen=s.vacuum||o.oxygen<100.0;o.integerAlignedLayout=true;if(s.vacuum)o.cues.push_back({1,t.hazard,HudShapeRole::Diamond,1001,true});if(s.criticalAudioCue)o.cues.push_back({2,t.warning,HudShapeRole::Triangle,1002,true});return o;}}

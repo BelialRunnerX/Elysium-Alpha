@@ -1,0 +1,3 @@
+#include "combat/TerrainDamageAdapter.hpp"
+#include "core/Saturating.hpp"
+namespace elysium::combat {TerrainDamageRequest TerrainDamageAdapter::translate(const TerrainHitContext&c)const{TerrainDamageRequest o{c.eventId,c.attackerId,c.targetAddress};o.structuralDamage=safe::nonNegative(safe::nonNegative(c.landedDamage)*safe::nonNegative(c.toolBreachScale));o.allowMicrodetail=c.category>=TerrainDamageCategory::FragileMicrodetail;o.allowExcavation=c.category>=TerrainDamageCategory::Excavation;o.allowStructuralBreach=c.category>=TerrainDamageCategory::StructuralBreach;if(c.category==TerrainDamageCategory::None||c.category==TerrainDamageCategory::MarkOnly)o.structuralDamage=0;return o;}}

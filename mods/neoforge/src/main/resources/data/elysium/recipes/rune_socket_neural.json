@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "elysium:neural_leggings" },
+    { "item": "elysium:neuralspike_rune" }
+  ],
+  "result": { "item": "elysium:neural_leggings" }
+}

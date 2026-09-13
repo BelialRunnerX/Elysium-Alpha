@@ -1,0 +1,112 @@
+name: build
+
+# Push it, and it builds and tests itself on both platforms.
+#
+# The Linux job is the one that matters most, because it can run the *graphics*
+# tests: Mesa's llvmpipe gives a real OpenGL 3.3 core context through EGL with
+# no GPU and no display, so the shaders compile, the framebuffer binds and the
+# render is compared against the software reference — in CI, on a machine with
+# no screen. The Windows job proves the MSVC build and the GL loader compile,
+# and runs everything that does not need a context.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (GCC, software OpenGL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          # libgl1-mesa-dri is the one that is easy to miss: it carries
+          # llvmpipe, the software rasteriser. Without it EGL comes up and then
+          # every draw goes nowhere.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build \
+            zlib1g-dev \
+            libgl-dev libegl-dev libgl1-mesa-dri libglfw3-dev
+
+      - name: Configure
+        # EnTT is not packaged in the Ubuntu images, so this is the one place
+        # the build is allowed to reach the network for it.
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DELY_FETCH_DEPENDENCIES=ON
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Test
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          # A GitHub runner has no display. Everything renders offscreen through
+          # EGL's surfaceless platform, which is the whole point of the headless
+          # design.
+          EGL_PLATFORM: surfaceless
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Render the proof images
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          mkdir -p out
+          ./build/systemsurvey 1234 | tee out/systems.txt
+          ./build/planetmap 23 out
+          ./build/crosssection 23 out
+          ./build/lodview 23 out | tee out/lod.txt
+          ./build/glview 23 out | tee out/gl.txt
+          ./build/savedemo 23 out | tee out/save.txt
+          ./build/genbench 23 200000 | tee out/genbench.txt
+
+      - name: Upload the proof images
+        uses: actions/upload-artifact@v4
+        with:
+          name: renders-and-reports
+          path: out/
+          if-no-files-found: error
+
+  windows:
+    name: Windows (MSVC, vcpkg)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        # The runner ships vcpkg already; manifest mode reads vcpkg.json and
+        # installs zlib, GLFW and EnTT without anything else being listed here.
+        run: >
+          cmake -B build -G "Visual Studio 17 2022" -A x64
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: Build
+        run: cmake --build build --config Release -- -m
+
+      - name: Test
+        # The graphics tests need EGL, which Windows does not have — a context
+        # there comes from a window. CMake leaves those tests out, and what
+        # remains is the generator, the mesher, the job system, the ECS and the
+        # save format.
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Check the tools run
+        run: |
+          mkdir out
+          .\build\Release\systemsurvey.exe 1234
+          .\build\Release\planetmap.exe 23 out
+          .\build\Release\genbench.exe 23 100000
+
+      - name: Upload the Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: elysium-windows-x64
+          path: build/Release/
+          if-no-files-found: error

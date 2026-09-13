@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "elysium:plasma_chestplate" },
+    { "item": "elysium:plasma_chestplate" }
+  ],
+  "result": { "item": "elysium:plasma_chestplate" }
+}
