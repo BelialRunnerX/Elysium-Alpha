@@ -1294,21 +1294,32 @@ window.__elysiumContinue = () => startGame(true);
 function bindTitleAction(id, fn) {
   const el = $(id);
   if (!el) return;
-  el.onclick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    fn();
+  let armed = false;
+  const run = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (state.mode === 'play') return;
+    if (armed) return;
+    armed = true;
+    try { fn(); } finally {
+      // Allow another title start after returning to title.
+      setTimeout(() => { armed = false; }, 750);
+    }
   };
-  el.onpointerdown = (e) => {
-    // Pointer-down covers automation/agents that synthesize down without click.
-    if (e.button != null && e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    fn();
-  };
+  el.addEventListener('click', run, true);
+  el.addEventListener('pointerup', run, true);
 }
 bindTitleAction('btn-new', window.__elysiumNew);
 bindTitleAction('btn-continue', window.__elysiumContinue);
+// Delegation fallback if the button node is replaced or overlay intercepts.
+$('title')?.addEventListener('click', (e) => {
+  const t = e.target;
+  if (!(t instanceof Element)) return;
+  if (t.closest('#btn-new')) window.__elysiumNew();
+  else if (t.closest('#btn-continue')) window.__elysiumContinue();
+}, true);
 $('btn-resume').onclick = () => setMode('play');
 $('btn-title').onclick = () => {
   persist();

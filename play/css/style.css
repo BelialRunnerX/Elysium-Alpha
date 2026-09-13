@@ -25,6 +25,7 @@ html, body, #app {
 #c {
   position: absolute;
   inset: 0;
+  z-index: 0;
   width: 100%;
   height: 100%;
   display: block;
@@ -127,6 +128,9 @@ html, body, #app {
 }
 
 .cta {
+  position: relative;
+  z-index: 6;
+  cursor: pointer;
   font-family: var(--font-display);
   letter-spacing: 0.14em;
   text-transform: uppercase;
