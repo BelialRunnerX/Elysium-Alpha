@@ -354,6 +354,8 @@ public final class DungeonRooms {
         }
         boss.moveTo(where.getX() + 0.5D, where.getY(), where.getZ() + 0.5D, 0.0F, 0.0F);
         boss.setPersistenceRequired();
+        // Marks the rift boss for depth progression (ROGUELIKE.md §1).
+        boss.getPersistentData().putBoolean("ElysiumRiftBoss", true);
         context.level().addFreshEntity(boss);
     }
 

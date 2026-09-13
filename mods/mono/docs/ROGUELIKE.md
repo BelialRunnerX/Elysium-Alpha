@@ -40,6 +40,10 @@ moment where a player weighs anything. A dungeon is a vending machine.
 contains a descent rather than only loot. Walking back out through the portal
 banks what you are carrying and resets depth to 1.
 
+**Status:** portal depth is implemented in `elysium-dungeons`
+(`DungeonInstances` portal depth map + boss-clear advancement). Room/loot counts
+scale with depth; leaving without a boss kill banks and resets depth to 1.
+
 That single change converts "go again" into *"one more floor, or cash out?"* —
 which is the entire engine of Diablo's Rifts and Deep Rock's extractions, and it
 is the cheapest of everything in this document.

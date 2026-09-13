@@ -67,6 +67,15 @@ public final class DungeonTravel {
      * which is the only fact that cannot be wrong — a portal block in the
      * dungeon is always a way out, and one anywhere else is always a way in.
      */
+    /** Base room count scales with rift depth (ROGUELIKE.md §1). Capped so generation stays bounded. */
+    static int roomsForDepth(int depth) {
+        return Math.min(24, ROOM_COUNT + Math.max(0, depth - 1) * 2);
+    }
+
+    static int lootForDepth(int depth) {
+        return Math.min(6, LOOT_ROOMS + Math.max(0, depth - 1) / 2);
+    }
+
     public static void use(ServerPlayer player, BlockPos portalPos) {
         if (onCooldown(player)) {
             return;
@@ -118,8 +127,9 @@ public final class DungeonTravel {
         // function of that seed, so a player joining computes exactly the same
         // dungeon the first player got - which is what makes storing only the
         // seed enough, and why the seed must never come from the clock.
+        int depth = instance.getDepth();
         DungeonLayout layout = DungeonLayout.generate(
-                instance.getSeed(), ROOM_COUNT, LOOT_ROOMS);
+                instance.getSeed(), roomsForDepth(depth), lootForDepth(depth));
 
         if (allocation.freshlyAllocated()) {
             // Work out what the dungeon is for before building it. This is the
@@ -149,11 +159,15 @@ public final class DungeonTravel {
         instances.enter(instance, player.getUUID());
         teleport(player, dungeonLevel, arrival);
 
-        player.displayClientMessage(
-                Component.translatable(allocation.freshlyAllocated()
-                                ? "elysiumdungeons.message.entered_new"
-                                : "elysiumdungeons.message.entered_joined")
-                        .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+        if (allocation.freshlyAllocated()) {
+            player.displayClientMessage(
+                    Component.translatable("elysiumdungeons.message.entered_depth", depth)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+        } else {
+            player.displayClientMessage(
+                    Component.translatable("elysiumdungeons.message.entered_joined")
+                            .withStyle(ChatFormatting.LIGHT_PURPLE), true);
+        }
     }
 
     // ------------------------------------------------------------------

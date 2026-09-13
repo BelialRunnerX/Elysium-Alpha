@@ -403,3 +403,30 @@ html, body, #app {
   .vitals { bottom: 9.5rem; }
   .brand { letter-spacing: 0.04em; }
 }
+
+
+.vehicle-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 7.4rem;
+  transform: translateX(-50%);
+  min-width: 220px;
+  padding: 0.55rem 0.9rem;
+  background: rgba(8, 14, 18, 0.78);
+  border: 1px solid rgba(61, 224, 255, 0.45);
+  box-shadow: 0 0 18px rgba(61, 224, 255, 0.12);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--mist);
+  text-align: center;
+  pointer-events: none;
+}
+.vehicle-panel strong {
+  color: var(--accent);
+  margin-right: 0.35rem;
+}
+.vehicle-panel span {
+  color: #e0b93a;
+}
+.vehicle-panel.hidden { display: none; }

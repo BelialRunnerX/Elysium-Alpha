@@ -8,12 +8,14 @@
 namespace elysium {
 
 namespace {
+// Display names aligned to Fourth Edition Part 16.4 + concept sheets.
+// Enum ordinals stay fixed for save compatibility.
 const std::vector<VehicleDefinition> kVehicles{
-    {VehicleType::ScoutRover,"Scout Rover",18.0f,8,35.0f,0.70f,0.35f,false,false,0.25f,2.2f,8.0f,180.0f,0.0f},
+    {VehicleType::ScoutRover,"R-01 Rover",18.0f,8,35.0f,0.70f,0.35f,false,false,0.25f,2.2f,8.0f,180.0f,0.0f},
     {VehicleType::CargoCrawler,"Cargo Crawler",7.0f,48,20.0f,0.45f,0.25f,false,false,0.35f,2.0f,15.0f,500.0f,0.0f},
-    {VehicleType::MiningRig,"Mining Rig",4.5f,24,16.0f,0.35f,0.20f,false,false,0.45f,1.8f,32.0f,800.0f,0.40f},
+    {VehicleType::MiningRig,"TDR-01 Terra-Drone",4.5f,24,16.0f,0.35f,0.20f,false,false,0.45f,1.8f,32.0f,800.0f,0.40f},
     {VehicleType::AmphibiousSkiff,"Amphibious Skiff",13.0f,18,18.0f,0.60f,250.0f,true,false,0.20f,1.8f,14.0f,300.0f,0.0f},
-    {VehicleType::HoverSled,"Hover Sled",22.0f,14,45.0f,1.00f,1.50f,false,true,0.15f,2.5f,28.0f,260.0f,0.0f},
+    {VehicleType::HoverSled,"HB-07 Hover Bike",22.0f,14,45.0f,1.00f,1.50f,false,true,0.15f,2.5f,28.0f,260.0f,0.0f},
     {VehicleType::SiegeHauler,"Siege Hauler",5.5f,64,22.0f,0.50f,0.30f,false,false,0.45f,2.1f,38.0f,1200.0f,0.25f}
 };
 

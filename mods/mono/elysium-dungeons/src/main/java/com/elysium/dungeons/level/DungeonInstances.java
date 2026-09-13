@@ -71,6 +71,12 @@ public final class DungeonInstances extends SavedData {
      */
     private final Map<Long, Long> portalToInstance = new HashMap<>();
 
+    /**
+     * Per-portal rift depth (ROGUELIKE.md §1).
+     * Cleared bosses push this up; banking an early exit resets it to 1.
+     */
+    private final Map<Long, Integer> portalDepth = new HashMap<>();
+
     public DungeonInstances() {
     }
 
@@ -113,6 +119,8 @@ public final class DungeonInstances extends SavedData {
 
         DungeonInstance instance = new DungeonInstance(
                 index, origin, seed, returnDimension, returnPos, portalAnchor);
+        int depth = portalDepth.getOrDefault(portalAnchor.asLong(), 1);
+        instance.setDepth(depth);
         instances.put(index, instance);
         portalToInstance.put(portalAnchor.asLong(), index);
         setDirty();
@@ -177,12 +185,28 @@ public final class DungeonInstances extends SavedData {
      */
     public boolean leave(DungeonInstance instance, UUID player) {
         boolean retired = instance.leave(player);
-        setDirty();
         if (retired) {
+            long portalKey = instance.getPortalAnchor().asLong();
+            if (instance.isBossDefeated()) {
+                int next = instance.getDepth() + 1;
+                portalDepth.put(portalKey, next);
+                ElysiumDungeons.LOGGER.info(
+                        "{} cleared at depth {}; next rift entry will be depth {}",
+                        instance, instance.getDepth(), next);
+            } else {
+                portalDepth.put(portalKey, 1);
+                ElysiumDungeons.LOGGER.info(
+                        "{} abandoned without a boss kill; portal depth reset to 1", instance);
+            }
             ElysiumDungeons.LOGGER.info("{} is empty and will not be re-entered; "
                     + "the next trip through that portal builds a new one", instance);
         }
+        setDirty();
         return retired;
+    }
+
+    public int depthFor(BlockPos portalAnchor) {
+        return portalDepth.getOrDefault(portalAnchor.asLong(), 1);
     }
 
     /** The instance a player standing at these coordinates is inside, if any. */
@@ -260,6 +284,15 @@ public final class DungeonInstances extends SavedData {
             portals.add(link);
         }
         tag.put("Portals", portals);
+
+        ListTag depths = new ListTag();
+        for (Map.Entry<Long, Integer> entry : portalDepth.entrySet()) {
+            CompoundTag d = new CompoundTag();
+            d.putLong("Portal", entry.getKey());
+            d.putInt("Depth", entry.getValue());
+            depths.add(d);
+        }
+        tag.put("PortalDepths", depths);
         return tag;
     }
 
@@ -278,6 +311,12 @@ public final class DungeonInstances extends SavedData {
         for (int i = 0; i < portals.size(); i++) {
             CompoundTag link = portals.getCompound(i);
             data.portalToInstance.put(link.getLong("Portal"), link.getLong("Instance"));
+        }
+
+        ListTag depths = tag.getList("PortalDepths", Tag.TAG_COMPOUND);
+        for (int i = 0; i < depths.size(); i++) {
+            CompoundTag d = depths.getCompound(i);
+            data.portalDepth.put(d.getLong("Portal"), Math.max(1, d.getInt("Depth")));
         }
 
         // Nothing is inside anything after a restart: occupants are not saved

@@ -1,18 +1,25 @@
 package com.elysium.dungeons.event;
 
 import com.elysium.dungeons.ElysiumDungeons;
+import com.elysium.dungeons.level.DungeonInstance;
+import com.elysium.dungeons.level.DungeonInstances;
 import com.elysium.dungeons.level.DungeonTravel;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
- * The three other ways a player stops being inside a dungeon.
+ * The three other ways a player stops being inside a dungeon, plus boss-kill
+ * depth progression for ROGUELIKE.md §1.
  *
- * Walking out through the return rift is the obvious one and is handled by the
+ * Walking out through the return rift is the obvious path and is handled by the
  * portal block. These are the ones that are easy to forget, and each one, left
  * unhandled, breaks the same thing: an instance that never empties, so its
  * portal never rerolls, so the mod's central promise quietly stops being kept
@@ -32,6 +39,45 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 public final class DungeonEvents {
 
     private DungeonEvents() {
+    }
+
+    /**
+     * Boss kill advances portal depth on the next fresh allocation
+     * (see {@link DungeonInstances#leave}).
+     */
+    @SubscribeEvent
+    public static void onBossDeath(LivingDeathEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (entity.level().isClientSide()) {
+            return;
+        }
+        if (!entity.level().dimension().equals(ElysiumDungeons.DUNGEON_LEVEL)) {
+            return;
+        }
+        if (!entity.getPersistentData().getBoolean("ElysiumRiftBoss")) {
+            return;
+        }
+        MinecraftServer server = entity.getServer();
+        if (server == null) {
+            return;
+        }
+        DungeonInstances instances = DungeonInstances.get(server);
+        DungeonInstance instance = instances.instanceAt(entity.blockPosition());
+        if (instance == null || instance.isBossDefeated()) {
+            return;
+        }
+        instance.setBossDefeated(true);
+        instances.setDirty();
+        if (event.getSource().getEntity() instanceof ServerPlayer player) {
+            player.displayClientMessage(
+                    Component.translatable(
+                                    "elysiumdungeons.message.boss_cleared",
+                                    instance.getDepth())
+                            .withStyle(ChatFormatting.GOLD),
+                    true);
+        }
+        ElysiumDungeons.LOGGER.info(
+                "Rift boss defeated in {} (depth {})", instance, instance.getDepth());
     }
 
     /**
@@ -87,9 +133,8 @@ public final class DungeonEvents {
         // So the instance is found by asking which one is still counting this
         // player - and only that one, because removing them from instances
         // they were never in would retire other people's dungeons.
-        com.elysium.dungeons.level.DungeonInstances instances =
-                com.elysium.dungeons.level.DungeonInstances.get(server);
-        for (com.elysium.dungeons.level.DungeonInstance instance : instances.all()) {
+        DungeonInstances instances = DungeonInstances.get(server);
+        for (DungeonInstance instance : instances.all()) {
             if (instance.contains(player.getUUID())) {
                 instances.leave(instance, player.getUUID());
             }

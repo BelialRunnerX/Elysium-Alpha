@@ -13,6 +13,7 @@ import {
   createHoverBike,
   createFieldFabricator,
 } from './assets/heroes.js';
+import { catalogueFor, modeLabel, cycleMode } from './vehicles.js';
 
 bindMaterials(THREE);
 
@@ -209,6 +210,10 @@ const state = {
   edits: {},
   enemies: [],
   positions: PLANETS.map(() => null),
+  // Fourth Edition Part 16.4 — surface vehicles / utility drones
+  vehicle: null,       // boarded Object3D
+  vehicleMode: 0,      // active function mode index
+  escort: null,        // Orbi (non-rideable) following the player
 };
 
 const renderer = new THREE.WebGLRenderer({
@@ -384,12 +389,22 @@ function placeHero(factory, x, z, yaw = 0, scale = 1) {
       // keep existing pulse clones
     }
   });
+  const spec = catalogueFor(root.userData.kind);
+  if (spec) {
+    root.userData.spec = spec;
+    root.userData.modeIndex = 0;
+    root.userData.energy = 100;
+    root.userData.rideable = !!spec.rideable;
+  }
   heroGroup.add(root);
   heroActors.push(root);
   return root;
 }
 
 function spawnHeroes() {
+  state.vehicle = null;
+  state.escort = null;
+  state.vehicleMode = 0;
   clearHeroes();
   // Ceramic LZ pad — stages the hero camp like a concept sheet floor
   const padY = surfaceY(2, 0);
@@ -448,17 +463,31 @@ function spawnHeroes() {
 
 function updateHeroes(dt) {
   for (const root of heroActors) {
-    root.userData.t += dt;
+    if (root === state.vehicle) continue;
+    root.userData.t = (root.userData.t || 0) + dt;
     const t = root.userData.t;
-    if (root.userData.hover) {
-      root.position.y = root.userData.baseY + 0.35 + Math.sin(t * 1.7) * 0.12;
+    const escorting = state.escort === root;
+
+    if (escorting) {
+      const p = controls.object.position;
+      const targetX = p.x - Math.sin(t * 0.7) * 2.2;
+      const targetZ = p.z - Math.cos(t * 0.7) * 2.2;
+      const gy = surfaceY(targetX, targetZ);
+      const hover = root.userData.hover ? 1.35 + Math.sin(t * 2.1) * 0.18 : 0.05;
+      root.position.x += (targetX - root.position.x) * Math.min(1, dt * 3.2);
+      root.position.z += (targetZ - root.position.z) * Math.min(1, dt * 3.2);
+      root.position.y = gy + hover;
+      root.userData.baseY = root.position.y;
+      root.lookAt(p.x, root.position.y, p.z);
+    } else if (root.userData.hover) {
+      root.position.y = (root.userData.baseY || root.position.y) + 0.08 + Math.sin(t * 1.7) * 0.12;
       root.rotation.y += dt * 0.35;
     } else {
       root.rotation.y += Math.sin(t * 0.6) * dt * 0.05;
     }
+
     root.traverse((o) => {
-      // Only pulse cloned materials / lights — never shared kit materials
-      if (o.isMesh && o.userData.pulse && o.material && o.material.emissiveIntensity != null && o.material !== o.userData._sharedEmissive) {
+      if (o.isMesh && o.userData.pulse && o.material && o.material.emissiveIntensity != null) {
         o.material.emissiveIntensity = 1.6 + Math.sin(t * 3.2) * 0.7;
       }
       if (o.isLight && o.isPointLight) {
@@ -921,8 +950,159 @@ function updateAtmosphere(dt) {
   particles.geometry.attributes.position.needsUpdate = true;
 }
 
+
+function vehiclePrompt(hero) {
+  if (!hero) return '';
+  const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+  const label = hero.userData.label || spec?.label || 'UNIT';
+  if (state.vehicle === hero) {
+    return `Q DISMOUNT · R MODE · F ACTIVATE · ${modeLabel(spec, state.vehicleMode)}`;
+  }
+  if (!spec) return `E · ${label}`;
+  if (spec.rideable) return `E BOARD · ${label}`;
+  if (hero.userData.kind === 'fabricator') return `E FABRICATE · ${label}`;
+  if (state.escort === hero) return `E DISMISS ESCORT · ${label}`;
+  return `E ASSIGN ESCORT · ${label}`;
+}
+
+function boardVehicle(hero) {
+  const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+  if (!spec?.rideable) return false;
+  state.vehicle = hero;
+  state.vehicleMode = hero.userData.modeIndex || 0;
+  velocity.set(0, 0, 0);
+  toast(`${spec.codename} · BOARDING · ${modeLabel(spec, state.vehicleMode)}`, 2.4);
+  raiseSuspicion(0.4);
+  return true;
+}
+
+function dismountVehicle() {
+  if (!state.vehicle) return;
+  const hero = state.vehicle;
+  const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+  const p = controls.object.position;
+  const side = 1.6;
+  hero.position.set(p.x + side, surfaceY(p.x + side, p.z) + (spec?.hover ? 1.15 : 0.05), p.z);
+  hero.userData.baseY = hero.position.y;
+  state.vehicle = null;
+  const panel = $('vehicle-panel');
+  if (panel) panel.classList.add('hidden');
+  toast(`${spec?.codename || 'UNIT'} · DISMOUNTED`, 1.8);
+}
+
+function activateVehicleMode(hero) {
+  const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+  if (!spec?.modes?.length) return;
+  const mode = spec.modes[((hero.userData.modeIndex || 0) % spec.modes.length + spec.modes.length) % spec.modes.length];
+  const id = mode.id;
+  if (id === 'build' || id === 'print') {
+    raiseSuspicion(1.2);
+    state.inventory[3] = (state.inventory[3] ?? 0) + 1;
+    renderHotbar();
+    toast(`${spec.codename} · ${mode.name} · +1 STEEL`, 2.2);
+  } else if (id === 'plant') {
+    raiseSuspicion(0.6);
+    state.hng = clamp(state.hng + 18, 0, 100);
+    toast(`${spec.codename} · ${mode.name} · RATION BOOST`, 2.0);
+    updateHud();
+  } else if (id === 'carry' || id === 'cargo' || id === 'assist') {
+    state.eng = clamp(state.eng + 12, 0, 100);
+    toast(`${spec.codename} · ${mode.name} · LOGISTICS LINK`, 2.0);
+    updateHud();
+  } else if (id === 'scan' || id === 'research' || id === 'survey' || id === 'hover' || id === 'idle') {
+    raiseSuspicion(0.35);
+    toast(`${spec.codename} · ${mode.name} · ${mode.verb.toUpperCase()}`, 2.2);
+  } else if (id === 'excavate' || id === 'utility') {
+    raiseSuspicion(1.8);
+    state.inventory[1] = (state.inventory[1] ?? 0) + 2;
+    renderHotbar();
+    toast(`${spec.codename} · ${mode.name} · +2 STONE`, 2.2);
+  } else if (id === 'explore' || id === 'follow') {
+    toast(`${spec.codename} · ${mode.name} · ${mode.verb.toUpperCase()}`, 2.0);
+  } else {
+    toast(`${spec.codename} · ${mode.name}`, 1.8);
+  }
+}
+
+function updateBoardedVehicle(dt) {
+  const hero = state.vehicle;
+  if (!hero) return;
+  const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+  if (!spec) return;
+
+  const speed = (keys.sprint ? spec.sprintSpeed : spec.driveSpeed) * (state.eng > 8 ? 1 : 0.45);
+  direction.set(0, 0, 0);
+  if (keys.forward) direction.z -= 1;
+  if (keys.back) direction.z += 1;
+  if (keys.left) direction.x -= 1;
+  if (keys.right) direction.x += 1;
+  if (direction.lengthSq() > 0) direction.normalize();
+
+  const forward = new THREE.Vector3();
+  const right = new THREE.Vector3();
+  controls.getDirection(forward);
+  forward.y = 0;
+  forward.normalize();
+  right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+  velocity.x = forward.x * -direction.z * speed + right.x * direction.x * speed;
+  velocity.z = forward.z * -direction.z * speed + right.z * direction.x * speed;
+  velocity.y = 0;
+
+  const obj = controls.object;
+  obj.position.x += velocity.x * dt;
+  obj.position.z += velocity.z * dt;
+
+  const half = WORLD * 0.48;
+  obj.position.x = clamp(obj.position.x, -half, half);
+  obj.position.z = clamp(obj.position.z, -half, half);
+
+  const seat = spec.seatOffset || [0, 1.2, 0];
+  const ground = surfaceY(obj.position.x, obj.position.z);
+  const hoverAmp = spec.hover ? 1.05 + Math.sin(performance.now() * 0.004) * 0.08 : 0.05;
+  obj.position.y = ground + seat[1];
+
+  hero.position.set(obj.position.x - seat[0], ground + hoverAmp, obj.position.z - seat[2]);
+  hero.userData.baseY = hero.position.y;
+  if (direction.lengthSq() > 0.01) {
+    hero.rotation.y = Math.atan2(velocity.x, velocity.z);
+  }
+
+  hero.userData.t = (hero.userData.t || 0) + dt;
+  hero.traverse((o) => {
+    if (o.isMesh && o.userData.pulse && o.material && o.material.emissiveIntensity != null) {
+      o.material.emissiveIntensity = 2.0 + Math.sin(hero.userData.t * 4.0) * 0.8;
+    }
+    if (o.isLight && o.isPointLight) o.intensity = 1.0 + Math.sin(hero.userData.t * 3.0) * 0.4;
+  });
+
+  if (direction.lengthSq() > 0) {
+    state.eng = clamp(state.eng - dt * spec.energyDrain * (keys.sprint ? 1.6 : 1), 0, 100);
+    if ((spec.pdfClass || '').includes('Mining') || state.vehicleMode === 3) raiseSuspicion(dt * 0.15);
+    else raiseSuspicion(dt * 0.04);
+  } else {
+    state.eng = clamp(state.eng + dt * 2.2, 0, 100);
+  }
+
+  state.hng = clamp(state.hng - dt * 0.2, 0, 100);
+  state.o2 = clamp(state.o2 - planet().oxygenDrain * dt * 0.35, 0, 100);
+  state.positions[state.planetIndex] = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
+  $('interact').textContent = vehiclePrompt(hero);
+  const panel = $('vehicle-panel');
+  if (panel) {
+    panel.classList.remove('hidden');
+    panel.innerHTML = `<strong>${spec.codename}</strong> ${spec.label}<br/><span>${modeLabel(spec, state.vehicleMode)}</span>`;
+  }
+}
+
 function updatePlayer(dt) {
-  const speed = (keys.sprint ? 14 : 7.5) * (state.eng > 5 ? 1 : 0.55);
+  if (state.vehicle) {
+    updateBoardedVehicle(dt);
+    return;
+  }
+  const panel = $('vehicle-panel');
+  if (panel) panel.classList.add('hidden');
+const speed = (keys.sprint ? 14 : 7.5) * (state.eng > 5 ? 1 : 0.55);
   direction.set(0, 0, 0);
   if (keys.forward) direction.z -= 1;
   if (keys.back) direction.z += 1;
@@ -1037,11 +1217,12 @@ function frame(now) {
     updatePlayer(dt);
     updateEnemies(dt);
     updateHeroes(dt);
-    const hero = nearestHero();
-    if (hero && (!state.enemies.length || true)) {
-      const label = hero.userData.label || 'FIELD UNIT';
-      if (!$('interact').textContent.includes('HOSTILE')) {
-        $('interact').textContent = `E · ${label}`;
+    if (!$('interact').textContent.includes('HOSTILE')) {
+      if (state.vehicle) {
+        $('interact').textContent = vehiclePrompt(state.vehicle);
+      } else {
+        const hero = nearestHero();
+        $('interact').textContent = hero ? vehiclePrompt(hero) : '';
       }
     }
     if (state.messageTimer > 0) {
@@ -1137,25 +1318,61 @@ addEventListener('keydown', (e) => {
       renderMap();
       setMode('map');
     }
-    if (e.code === 'KeyF') tryAttack();
-    if (e.code === 'KeyE') {
-      const hero = nearestHero();
+    if (e.code === 'KeyF') {
+      if (state.vehicle) activateVehicleMode(state.vehicle);
+      else tryAttack();
+    }
+
+    if (e.code === 'KeyQ' && state.vehicle) {
+      dismountVehicle();
+    }
+    if (e.code === 'KeyR') {
+      const hero = state.vehicle || nearestHero();
       if (hero) {
-        toast(`${hero.userData.label || 'UNIT'} · SYSTEMS ONLINE`, 2.2);
-        if (hero.userData.kind === 'fabricator') {
-          raiseSuspicion(1.5);
-          state.inventory[3] = (state.inventory[3] ?? 0) + 1;
-          renderHotbar();
-          toast('FAB-01 OUTPUT · +1 STEEL', 2.0);
+        const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+        if (spec?.modes?.length) {
+          hero.userData.modeIndex = cycleMode(spec, hero.userData.modeIndex || 0, 1);
+          if (state.vehicle === hero) state.vehicleMode = hero.userData.modeIndex;
+          toast(`${spec.codename} · MODE · ${modeLabel(spec, hero.userData.modeIndex)}`, 1.8);
         }
-      } else {
-        state.vit = clamp(state.vit + 8, 0, 100);
-        state.o2 = clamp(state.o2 + 12, 0, 100);
-        state.hng = clamp(state.hng + 10, 0, 100);
-        toast('FIELD RATION / SUIT CYCLE', 1.5);
-        updateHud();
       }
     }
+
+    if (e.code === 'KeyE') {
+      if (state.vehicle) {
+        activateVehicleMode(state.vehicle);
+      } else {
+        const hero = nearestHero();
+        if (hero) {
+          const spec = hero.userData.spec || catalogueFor(hero.userData.kind);
+          if (spec?.rideable) {
+            boardVehicle(hero);
+          } else if (hero.userData.kind === 'fabricator') {
+            hero.userData.modeIndex = 0;
+            activateVehicleMode(hero);
+          } else if (hero.userData.kind === 'orbi_scout') {
+            if (state.escort === hero) {
+              state.escort = null;
+              toast('ORBI · ESCORT DISMISSED', 1.8);
+            } else {
+              state.escort = hero;
+              hero.userData.modeIndex = 2;
+              toast('ORBI · FOLLOW / ALLY ASSIST', 2.0);
+              raiseSuspicion(0.25);
+            }
+          } else {
+            toast(`${hero.userData.label || 'UNIT'} · SYSTEMS ONLINE`, 2.0);
+          }
+        } else {
+          state.vit = clamp(state.vit + 8, 0, 100);
+          state.o2 = clamp(state.o2 + 12, 0, 100);
+          state.hng = clamp(state.hng + 10, 0, 100);
+          toast('FIELD RATION / SUIT CYCLE', 1.5);
+          updateHud();
+        }
+      }
+    }
+
     if (e.code === 'KeyC') {
       renderCraft();
       setMode('craft');

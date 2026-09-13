@@ -94,6 +94,15 @@ public final class DungeonInstance {
      */
     private int partyLevel;
 
+    /**
+     * Rift depth for this run (ROGUELIKE.md §1). Starts at 1.
+     * Higher depth means more rooms and harder scaling on the next allocation.
+     */
+    private int depth = 1;
+
+    /** True once the rift warden / bestiary boss for this instance has died. */
+    private boolean bossDefeated;
+
     public DungeonInstance(long index, BlockPos origin, long seed,
                            ResourceKey<Level> returnDimension, BlockPos returnPos,
                            BlockPos portalAnchor) {
@@ -193,6 +202,22 @@ public final class DungeonInstance {
         this.partyLevel = Math.max(0, level);
     }
 
+    public int getDepth() {
+        return depth;
+    }
+
+    public void setDepth(int depth) {
+        this.depth = Math.max(1, depth);
+    }
+
+    public boolean isBossDefeated() {
+        return bossDefeated;
+    }
+
+    public void setBossDefeated(boolean defeated) {
+        this.bossDefeated = defeated;
+    }
+
     public BlockPos getPortalAnchor() {
         return portalAnchor;
     }
@@ -211,6 +236,8 @@ public final class DungeonInstance {
         tag.putLong("PortalAnchor", portalAnchor.asLong());
         tag.putBoolean("Retired", retired);
         tag.putInt("PartyLevel", partyLevel);
+        tag.putInt("Depth", depth);
+        tag.putBoolean("BossDefeated", bossDefeated);
 
         // Occupants are deliberately NOT saved. A server restart means nobody
         // is inside any dungeon: every player is loaded fresh and re-enters
@@ -235,6 +262,8 @@ public final class DungeonInstance {
         // getInt returns 0 for a missing key, which is exactly the
         // "unrecorded" value, so nothing special is needed here.
         instance.partyLevel = tag.getInt("PartyLevel");
+        instance.depth = Math.max(1, tag.contains("Depth") ? tag.getInt("Depth") : 1);
+        instance.bossDefeated = tag.getBoolean("BossDefeated");
         return instance;
     }
 
